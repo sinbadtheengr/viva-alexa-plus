@@ -42,8 +42,16 @@ transitions and timing, which is what a plain conversational model cannot do on 
 
 ## Status
 
-Pre-alpha. Scaffolding only. See [GAPS_AND_ISSUES.md](GAPS_AND_ISSUES.md) for what is
-unresolved — in particular GAP-001 (CLI provenance) and GAP-002 (corpus licensing).
+**F-2 (corpus) and F-3 (session state machine) are done** — 45 tests green, build clean,
+turn-taking measured at well under a microsecond per operation.
+
+Not started: F-1 (transport), F-4 (tools), F-5/F-6 (Bedrock), F-7 (progress),
+F-8 (MCP Apps UI), F-9 (OAuth). See [GAPS_AND_ISSUES.md](GAPS_AND_ISSUES.md) for what is
+still unresolved — in particular GAP-001 (CLI provenance) and GAP-006 (certification timing).
+
+```bash
+npm install && npm run build && npm test
+```
 
 ## License
 

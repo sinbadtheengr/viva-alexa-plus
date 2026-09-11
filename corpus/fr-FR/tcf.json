@@ -1,0 +1,56 @@
+{
+  "provenance": "Contenu original rédigé pour ce projet. Les consignes, les points de la fiche et les relances sont écrits de zéro. Aucun texte ne provient de France Éducation international ni d'aucune épreuve publiée ; seul le format public de l'épreuve (structure des tâches et minutage) est repris. Voir GAP-002.",
+  "items": [
+    {
+      "id": "tcf.p1.quotidien.001",
+      "exam": "tcf",
+      "locale": "fr-FR",
+      "part": 1,
+      "topic": "quotidien",
+      "prompt": "Bonjour. Pour commencer, présentez-vous et parlez-moi un peu de votre vie quotidienne.",
+      "prepSeconds": 0,
+      "speakSeconds": 120,
+      "followUpSeeds": [
+        "Qu'est-ce qui vous plaît le plus dans une journée type ?",
+        "Y a-t-il quelque chose que vous aimeriez changer ?",
+        "Comment occupez-vous votre temps libre ?"
+      ]
+    },
+    {
+      "id": "tcf.p2.association.001",
+      "exam": "tcf",
+      "locale": "fr-FR",
+      "part": 2,
+      "topic": "association",
+      "prompt": "Vous venez de vous installer dans une nouvelle ville et vous souhaitez vous inscrire à une association sportive. Vous vous adressez à l'accueil pour obtenir les informations dont vous avez besoin. Vous avez deux minutes de préparation.",
+      "bullets": [
+        "les horaires et les jours d'entraînement",
+        "le tarif de l'inscription",
+        "le matériel à prévoir",
+        "et la possibilité de faire une séance d'essai"
+      ],
+      "prepSeconds": 120,
+      "speakSeconds": 330,
+      "followUpSeeds": [
+        "Et si les horaires ne vous conviennent pas, que proposez-vous ?",
+        "Quelles garanties demanderiez-vous avant de payer ?",
+        "Comment réagiriez-vous si la séance d'essai était payante ?"
+      ]
+    },
+    {
+      "id": "tcf.p3.telephone.001",
+      "exam": "tcf",
+      "locale": "fr-FR",
+      "part": 3,
+      "topic": "telephone",
+      "prompt": "Donnez votre point de vue sur le sujet suivant : faut-il limiter l'usage du téléphone portable dans les écoles ? Vous avez deux minutes de préparation.",
+      "prepSeconds": 120,
+      "speakSeconds": 270,
+      "followUpSeeds": [
+        "Quels seraient les effets concrets d'une telle mesure ?",
+        "Comment réagiraient les élèves, selon vous ?",
+        "Existe-t-il une autre solution que l'interdiction ?"
+      ]
+    }
+  ]
+}

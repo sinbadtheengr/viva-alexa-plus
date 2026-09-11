@@ -1,0 +1,143 @@
+{
+  "provenance": "Original content written for this project. Item wording, cue-card bullets and follow-up probes are authored from scratch. No text is reproduced from Cambridge, IDP, British Council or any other published exam material; only the public format of the test (part structure and timings) is reflected. See GAP-002.",
+  "items": [
+    {
+      "id": "ielts.p1.hometown.001",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 1,
+      "topic": "hometown",
+      "prompt": "Let's start with where you're from. Tell me about the place you grew up in.",
+      "prepSeconds": 0,
+      "speakSeconds": 45,
+      "followUpSeeds": [
+        "What do you like most about living there?",
+        "Has it changed much since you were a child?",
+        "Would you recommend it to someone visiting for the first time?"
+      ]
+    },
+    {
+      "id": "ielts.p1.work.001",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 1,
+      "topic": "work",
+      "prompt": "Now I'd like to ask about what you do each day. Do you work, or are you studying?",
+      "prepSeconds": 0,
+      "speakSeconds": 45,
+      "followUpSeeds": [
+        "What's the most demanding part of that?",
+        "How did you come to choose it?",
+        "Is it something you can see yourself doing in ten years?"
+      ]
+    },
+    {
+      "id": "ielts.p1.technology.001",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 1,
+      "topic": "technology",
+      "prompt": "Let's talk about technology. Which device do you use most on an ordinary day?",
+      "prepSeconds": 0,
+      "speakSeconds": 45,
+      "followUpSeeds": [
+        "What would change if you had to manage without it for a week?",
+        "Do you use it more than you'd like to?",
+        "How do you think people handled this before it existed?"
+      ]
+    },
+    {
+      "id": "ielts.p2.work.001",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 2,
+      "topic": "work",
+      "prompt": "I'd like you to describe a piece of work you were proud of. You have one minute to prepare, and then I'd like you to speak for two minutes.",
+      "bullets": [
+        "what the work was",
+        "when you did it",
+        "what made it difficult",
+        "and explain why you were proud of it"
+      ],
+      "prepSeconds": 60,
+      "speakSeconds": 120,
+      "followUpSeeds": [
+        "Would you approach it differently if you started again today?",
+        "Did anyone else understand how much effort it took?",
+        "What did it teach you that you still use?"
+      ]
+    },
+    {
+      "id": "ielts.p2.journey.001",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 2,
+      "topic": "journey",
+      "prompt": "I'd like you to describe a journey that did not go as planned. You have one minute to prepare, and then I'd like you to speak for two minutes.",
+      "bullets": [
+        "where you were travelling to",
+        "who you were with",
+        "what went wrong",
+        "and explain how you felt about it afterwards"
+      ],
+      "prepSeconds": 60,
+      "speakSeconds": 120,
+      "followUpSeeds": [
+        "Looking back, was anything about it worth the trouble?",
+        "Could it have been avoided?",
+        "Has it changed how you prepare for trips now?"
+      ]
+    },
+    {
+      "id": "ielts.p2.teacher.001",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 2,
+      "topic": "teacher",
+      "prompt": "I'd like you to describe someone who taught you something useful. You have one minute to prepare, and then I'd like you to speak for two minutes.",
+      "bullets": [
+        "who the person was",
+        "what they taught you",
+        "how they went about it",
+        "and explain why it stayed with you"
+      ],
+      "prepSeconds": 60,
+      "speakSeconds": 120,
+      "followUpSeeds": [
+        "Have you ever passed that on to someone else?",
+        "Would the same approach work for everyone?",
+        "What made them different from other people who tried to teach you?"
+      ]
+    },
+    {
+      "id": "ielts.p3.work.001",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 3,
+      "topic": "work",
+      "prompt": "Let's consider work more generally. Do you think people expect more from their jobs than they used to?",
+      "prepSeconds": 0,
+      "speakSeconds": 60,
+      "followUpSeeds": [
+        "What do you think is driving that change?",
+        "Is that expectation a realistic one?",
+        "How might it look a generation from now?"
+      ]
+    },
+    {
+      "id": "ielts.p3.travel.001",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 3,
+      "topic": "travel",
+      "prompt": "Let's think about travel more broadly. Some people argue that cheap flights have made travel less meaningful. What's your view?",
+      "prepSeconds": 0,
+      "speakSeconds": 60,
+      "followUpSeeds": [
+        "Who benefits most from that change?",
+        "Could it be managed differently?",
+        "Is there a cost that doesn't show up in the ticket price?"
+      ]
+    }
+  ]
+}

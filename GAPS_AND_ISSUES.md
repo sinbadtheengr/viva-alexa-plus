@@ -64,7 +64,7 @@ faking a fourth score. → **FRICTION-002** and a genuine feature request to Ama
 
 ---
 
-## GAP-005 · S2 · OPEN · <500ms latency budget vs. an LLM grading call
+## GAP-005 · S2 · MITIGATED · <500ms latency budget vs. an LLM grading call
 
 The documented round-trip budget is **under 500ms**. A Bedrock rubric-scoring call will not
 finish in that window.
@@ -74,6 +74,20 @@ finish in that window.
 work and returns immediately; results are collected on a follow-up turn while Alexa+ is
 naturally saying "let me pull your results together." Design for this from day 1 — it is
 not a late optimization.
+
+*Measured 2026-09-11*, once F-2/F-3 landed — the turn-taking path is effectively free:
+
+| Operation | Mean over 2,000 runs |
+|---|---|
+| `create` | 0.0010 ms |
+| `get_status` | 0.0002 ms |
+| `advance_phase` | 0.0014 ms |
+| `submit_response` | 0.0003 ms |
+| full 8-op exam walk-through | 0.071 ms |
+
+The state machine consumes ~0.014% of the per-tool budget, so the entire 500ms is
+available to HTTP and Alexa+ transport. The split was the right call: every millisecond
+of risk now sits in the network and in Bedrock, and Bedrock is off the critical path.
 
 ---
 
