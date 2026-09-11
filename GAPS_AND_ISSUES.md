@@ -107,3 +107,37 @@ Record the demo video against the simulator. Treat certification as upside.
 The state machine needs a stable session key. How Alexa+ identifies the user to the MCP
 server across turns (OAuth subject? per-conversation id?) needs confirming before the
 progress-tracking feature (F-7) is built on it.
+
+---
+
+## GAP-008 · S2 · OPEN · Nothing happens when the speaking clock runs out
+
+F-3 specifies phase deadlines but not what enforces them. As built, when a candidate's
+speaking time expires the deadline simply passes: `secondsRemaining` floors at 0 and the
+session sits in `speaking` until it idles out. A real examiner stops you.
+
+This is a **spec defect, not an implementation choice** — F-3 and F-4 between them never
+say who notices the expiry. Nothing in MCP lets a server interrupt; only Alexa+ can speak
+unprompted, and only if something tells it to.
+
+*Candidate resolutions, to decide before F-4:*
+1. `get_status` returns an `overrun: true` flag and Alexa+ is instructed, in the tool
+   description, to cut the candidate off — puts the behavior in the model's hands.
+2. `submit_response` accepts a late transcript but marks the turn `overrun`, and F-6
+   reflects it in the Fluency & Coherence score — truthful, and needs no interruption.
+3. Both.
+
+Option 2 is the one that survives an unreliable interrupt path, so it is the likely answer;
+it needs ratifying in CLAUDE.md rather than being decided inside F-4.
+
+---
+
+## GAP-009 · S3 · OPEN · `provenance` is in the corpus schema but not in the spec
+
+F-2's `ExamItem` definition has no file-level fields. Implementation added a **required**
+`provenance` string per corpus file, so that GAP-002 (no third-party exam content) is
+enforced by the loader rather than by good intentions — an undocumented corpus file now
+fails to load.
+
+This is an addition to the spec made during implementation. It should be written into
+F-2 in CLAUDE.md so the spec and the code agree, or removed.
