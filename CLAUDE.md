@@ -45,6 +45,10 @@ ExamItem {
 
 `followUpSeeds` is mandatory: the exam must run to completion with the LLM entirely down.
 
+Each corpus **file** additionally carries a required `provenance` string describing where
+its content came from. An undocumented corpus file fails to load, so hard rule 1 is
+enforced by the loader rather than by good intentions. *(Ratified from GAP-009.)*
+
 ## F-3 · Session state machine
 
 Phases: `idle → briefing → prep → speaking → followup → scoring → complete`.
@@ -52,18 +56,33 @@ Transitions are server-owned; a tool call that is illegal for the current phase 
 MCP error naming the current phase and the legal next actions.
 
 Each session stores: id, locale, exam, part, item id, phase, phase deadline (epoch ms),
-turns (`{role, text, at}`), and a scoring handle. Phase deadlines are computed server-side
-from the corpus item — never passed in by the caller.
+turns (`{role, text, at, overrun}`), and a scoring handle. Phase deadlines are computed
+server-side from the corpus item — never passed in by the caller.
 
 Sessions expire after 30 minutes idle.
+
+### Overrun — what happens when the clock runs out
+
+*(Ratified from GAP-008, option 2.)* Deadlines are **observed, not enforced by
+interruption**. An MCP server cannot interrupt a speaker, and a design that depends on
+Alexa+ choosing to cut the candidate off would fail silently whenever it didn't.
+
+So: a late `submit_response` is always accepted, and the turn is marked `overrun: true`
+when it arrives after `phaseDeadline`. The session records `overrunSeconds` — how far past
+the limit the candidate ran. `get_status` reports `overrun` so a caller *may* prompt, but
+nothing depends on it doing so.
+
+Overrun is then scored rather than punished: F-6 passes it to the rubric as evidence under
+**Fluency & Coherence**, where running long without concluding is a real weakness that a
+human examiner would mark. Never reject a turn, and never silently truncate one.
 
 ## F-4 · MCP tools
 
 | Tool | Input | Returns | Budget |
 |---|---|---|---|
 | `start_exam` | exam, part, locale, topic? | item prompt, bullets, timing, session id | <100ms |
-| `get_status` | session id | phase, seconds remaining | <50ms |
-| `submit_response` | session id, transcript | next follow-up question, phase | <150ms |
+| `get_status` | session id | phase, seconds remaining, `overrun` | <50ms |
+| `submit_response` | session id, transcript | next follow-up question, phase, `overrun` | <150ms |
 | `advance_phase` | session id | new phase + what to say | <50ms |
 | `score_session` | session id | `{status:"pending", pollAfterMs}` | <100ms |
 | `get_results` | session id | scores, or `{status:"pending"}` | <100ms |
@@ -71,6 +90,14 @@ Sessions expire after 30 minutes idle.
 
 `submit_response` returns a follow-up from `followUpSeeds` immediately; a Bedrock-generated
 probe replaces it on the next turn if it has arrived. Never block on the model.
+
+Every tool returns both a human-readable `content` block — what Alexa+ speaks — and a
+`structuredContent` payload for the MCP Apps UI (F-8). Tool descriptions are written for a
+reasoning model deciding *when to call them*, not for a developer reading an API doc.
+
+Domain errors map onto MCP tool errors as `isError: true` with the message intact:
+a phase violation must tell the model what it can do instead, so it can recover in the
+conversation rather than dead-ending.
 
 ## F-5 · Follow-up generation (Bedrock, async)
 
@@ -89,6 +116,11 @@ the allowed band/level set; on invalid output retry once at temperature 0, then 
 `partial` result rather than a fabricated score.
 
 Prompt must state that audio was unavailable and pronunciation is not assessed (GAP-004).
+
+Pass per-turn `overrun` and the session's `overrunSeconds` into the rubric prompt as
+evidence under Fluency & Coherence (F-3, ratified from GAP-008). Running well past the
+limit without reaching a conclusion is a genuine weakness; the model should weigh it, not
+treat it as a rule violation.
 
 ## F-7 · Progress tracking
 

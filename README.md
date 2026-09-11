@@ -42,15 +42,23 @@ transitions and timing, which is what a plain conversational model cannot do on 
 
 ## Status
 
-**F-2 (corpus) and F-3 (session state machine) are done** — 45 tests green, build clean,
-turn-taking measured at well under a microsecond per operation.
+**F-1, F-2, F-3 and F-4 are done** — 67 tests green, build clean. A real MCP client
+connects over Streamable HTTP and runs an exam end to end in both locales.
 
-Not started: F-1 (transport), F-4 (tools), F-5/F-6 (Bedrock), F-7 (progress),
-F-8 (MCP Apps UI), F-9 (OAuth). See [GAPS_AND_ISSUES.md](GAPS_AND_ISSUES.md) for what is
-still unresolved — in particular GAP-001 (CLI provenance) and GAP-006 (certification timing).
+Measured on a live server: HTTP round trips 0.8–7.8 ms, tool execution 0.07–0.17 ms
+against budgets of 50–150 ms. Every tool call is logged with its duration and whether it
+breached budget.
+
+Not started: F-5/F-6 (Bedrock follow-ups and rubric scoring — the `Scorer` seam exists and
+reports honestly that no grader is connected), F-7 (progress keying, blocked on GAP-007),
+F-8 (MCP Apps UI), **F-9 (OAuth 2.1 + PKCE — the server is currently unauthenticated and
+must not be exposed publicly)**.
 
 ```bash
-npm install && npm run build && npm test
+npm install
+npm run build && npm test
+npm start                     # http://127.0.0.1:8787/mcp
+curl http://127.0.0.1:8787/healthz
 ```
 
 ## License

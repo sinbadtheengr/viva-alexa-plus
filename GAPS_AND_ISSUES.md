@@ -110,7 +110,7 @@ progress-tracking feature (F-7) is built on it.
 
 ---
 
-## GAP-008 · S2 · OPEN · Nothing happens when the speaking clock runs out
+## GAP-008 · S2 · CLOSED · Nothing happens when the speaking clock runs out
 
 F-3 specifies phase deadlines but not what enforces them. As built, when a candidate's
 speaking time expires the deadline simply passes: `secondsRemaining` floors at 0 and the
@@ -127,17 +127,20 @@ unprompted, and only if something tells it to.
    reflects it in the Fluency & Coherence score — truthful, and needs no interruption.
 3. Both.
 
-Option 2 is the one that survives an unreliable interrupt path, so it is the likely answer;
-it needs ratifying in CLAUDE.md rather than being decided inside F-4.
+**Resolved 2026-09-11: option 2**, ratified into CLAUDE.md under F-3 ("Overrun"), F-4 and
+F-6. Deadlines are observed, never enforced by interruption: a late turn is accepted in
+full and marked `overrun`, the session accumulates `overrunSeconds`, `get_status` exposes
+it so a caller *may* prompt, and F-6 scores it as Fluency & Coherence evidence. Nothing in
+the exam depends on Alexa+ choosing to interrupt, which is the property that made this the
+only safe option.
 
 ---
 
-## GAP-009 · S3 · OPEN · `provenance` is in the corpus schema but not in the spec
+## GAP-009 · S3 · CLOSED · `provenance` is in the corpus schema but not in the spec
 
 F-2's `ExamItem` definition has no file-level fields. Implementation added a **required**
 `provenance` string per corpus file, so that GAP-002 (no third-party exam content) is
 enforced by the loader rather than by good intentions — an undocumented corpus file now
 fails to load.
 
-This is an addition to the spec made during implementation. It should be written into
-F-2 in CLAUDE.md so the spec and the code agree, or removed.
+**Resolved 2026-09-11: kept and written into F-2.** Spec and code now agree.

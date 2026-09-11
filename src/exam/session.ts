@@ -17,6 +17,8 @@ export interface Turn {
   readonly role: "examiner" | "candidate";
   readonly text: string;
   readonly at: number;
+  /** True when this turn arrived after the phase deadline had passed. */
+  readonly overrun: boolean;
 }
 
 export interface Session {
@@ -31,6 +33,11 @@ export interface Session {
   turns: Turn[];
   /** How many seed probes have been used (F-5 replaces these when Bedrock answers). */
   followUpIndex: number;
+  /**
+   * Total seconds the candidate ran past a deadline across the session.
+   * Scored as evidence under Fluency & Coherence by F-6, never punished here.
+   */
+  overrunSeconds: number;
   scoringHandle: string | null;
   lastTouchedAt: number;
 }
@@ -46,6 +53,12 @@ export interface SessionStatus {
   /** Whole seconds left in the current phase, or null when the phase is untimed. */
   readonly secondsRemaining: number | null;
   readonly turnCount: number;
+  /**
+   * True once the current timed phase has run out. A caller may use this to
+   * prompt the candidate — nothing in the exam depends on it doing so (GAP-008).
+   */
+  readonly overrun: boolean;
+  readonly overrunSeconds: number;
 }
 
 export interface AdvanceResult {
@@ -63,6 +76,10 @@ export interface SubmitResult {
   readonly followUp: string | null;
   /** True when no probes remain and the caller should move to scoring. */
   readonly exhausted: boolean;
+  /** True when this turn arrived late. The turn is still accepted in full. */
+  readonly overrun: boolean;
+  /** How far past the deadline this turn arrived, in whole seconds. */
+  readonly overrunSeconds: number;
 }
 
 export interface SessionStoreOptions {
@@ -101,8 +118,9 @@ export class SessionStore {
       itemId: item.id,
       phase: "briefing",
       phaseDeadline: null,
-      turns: [{ role: "examiner", text: item.prompt, at }],
+      turns: [{ role: "examiner", text: item.prompt, at, overrun: false }],
       followUpIndex: 0,
+      overrunSeconds: 0,
       scoringHandle: null,
       lastTouchedAt: at,
     };
@@ -123,11 +141,14 @@ export class SessionStore {
 
   status(id: string): SessionStatus {
     const session = this.get(id);
+    const secondsRemaining = this.#secondsRemaining(session);
     return {
       sessionId: session.id,
       phase: session.phase,
-      secondsRemaining: this.#secondsRemaining(session),
+      secondsRemaining,
       turnCount: session.turns.length,
+      overrun: secondsRemaining === 0,
+      overrunSeconds: session.overrunSeconds,
     };
   }
 
@@ -163,18 +184,27 @@ export class SessionStore {
    * The probe comes from `followUpSeeds` so this call never waits on a model
    * (hard rule 3); F-5 swaps in a Bedrock-generated probe on a later turn only
    * if one has already arrived.
+   *
+   * A late turn is accepted in full and marked `overrun` (GAP-008, option 2).
+   * Never reject a turn and never truncate one — running long is scored by F-6
+   * as evidence under Fluency & Coherence, not enforced here.
    */
   submitResponse(id: string, transcript: string): SubmitResult {
     const session = this.#require(id, "submit_response");
     const item = this.#item(session);
     const at = this.#now();
 
-    session.turns.push({ role: "candidate", text: transcript, at });
+    const lateBy =
+      session.phaseDeadline === null ? 0 : Math.max(0, Math.ceil((at - session.phaseDeadline) / 1000));
+    const overrun = lateBy > 0;
+    if (overrun) session.overrunSeconds += lateBy;
+
+    session.turns.push({ role: "candidate", text: transcript, at, overrun });
 
     const followUp = item.followUpSeeds[session.followUpIndex] ?? null;
     if (followUp !== null) {
       session.followUpIndex += 1;
-      session.turns.push({ role: "examiner", text: followUp, at });
+      session.turns.push({ role: "examiner", text: followUp, at, overrun: false });
     }
 
     session.phase = "followup";
@@ -186,6 +216,8 @@ export class SessionStore {
       phase: session.phase,
       followUp,
       exhausted: followUp === null,
+      overrun,
+      overrunSeconds: lateBy,
     };
   }
 

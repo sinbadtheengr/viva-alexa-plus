@@ -64,3 +64,32 @@ convention, or guidance on what Alexa+ says to the user while a tool is still th
   Add-on API reference as the source for installation details.
 
 Both 404s sit directly on the critical path of a developer's first hour.
+
+---
+
+## FRICTION-005 · The MCP TypeScript SDK does not typecheck against its own interface
+
+`StreamableHTTPServerTransport` is not assignable to the `Transport` interface it
+implements, under TypeScript's `exactOptionalPropertyTypes`:
+
+```
+error TS2379: Argument of type 'StreamableHTTPServerTransport' is not assignable to
+parameter of type 'Transport' with 'exactOptionalPropertyTypes: true'.
+  Types of property 'onclose' are incompatible.
+    Type '(() => void) | undefined' is not assignable to type '() => void'.
+```
+
+The class exposes `onclose` / `onerror` / `onmessage` as accessor pairs typed
+`(() => void) | undefined`, while `Transport` declares them as optional properties.
+Under this flag the two spellings are not the same type, so `server.connect(transport)`
+fails against the SDK's own transport. Same for `CallToolResult`: a handler returning a
+plain object needs an index signature the docs never mention.
+
+*Cost:* ~20 minutes, and a cast in production code
+([src/index.ts](src/index.ts)) rather than relaxing the flag for our own modules.
+*What would have helped:* declaring the optional members in `Transport` as
+`onclose?: (() => void) | undefined`, which is a one-line change per member and makes the
+interface exact-optional-safe without affecting anyone else.
+*Status:* upstream fix candidate — this is the intended **Open Source mini-challenge**
+contribution. Small, self-contained, and verifiable with a single `tsc` run.
+
