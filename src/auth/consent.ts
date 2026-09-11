@@ -1,0 +1,194 @@
+import { timingSafeEqual } from "node:crypto";
+import express, { type Request, type Response, type Router } from "express";
+import type { AuthConfig } from "./config.js";
+import { CONSENT_PATH, type VivaOAuthProvider } from "./provider.js";
+
+/**
+ * F-9 · The consent screen.
+ *
+ * A code is only ever minted after the user actively approves. Nothing here
+ * auto-approves, because an authorization server that grants without asking is
+ * not an authorization server.
+ */
+
+const MAX_ATTEMPTS = 5;
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/** Constant-time comparison, so a wrong passcode leaks nothing through timing. */
+function passcodeMatches(given: string, expected: string): boolean {
+  const a = Buffer.from(given);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length) {
+    // Still burn a comparison so the mismatch costs the same either way.
+    timingSafeEqual(b, b);
+    return false;
+  }
+  return timingSafeEqual(a, b);
+}
+
+function page(options: {
+  rid: string;
+  clientName: string;
+  resource: string | undefined;
+  error?: string;
+}): string {
+  const error = options.error
+    ? `<p class="error" role="alert">${escapeHtml(options.error)}</p>`
+    : "";
+  const resource = options.resource
+    ? `<dt>Resource</dt><dd><code>${escapeHtml(options.resource)}</code></dd>`
+    : "";
+  return `<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Authorize Viva</title>
+<style>
+  :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+  body { display:grid; place-items:center; min-height:100vh; margin:0; background:#f6f6f4; }
+  @media (prefers-color-scheme: dark) { body { background:#16161a; color:#eee; } }
+  main { max-width:26rem; padding:2rem; background:canvas; border-radius:12px;
+         box-shadow:0 1px 3px rgba(0,0,0,.12); }
+  h1 { font-size:1.25rem; margin:0 0 .25rem; }
+  p.lead { margin:0 0 1.25rem; color:#666; font-size:.9rem; }
+  dl { display:grid; grid-template-columns:auto 1fr; gap:.35rem .75rem; font-size:.85rem;
+       margin:0 0 1.25rem; }
+  dt { color:#666; } dd { margin:0; }
+  code { font-size:.8rem; word-break:break-all; }
+  label { display:block; font-size:.85rem; margin-bottom:.35rem; }
+  input { width:100%; padding:.6rem; font-size:1rem; border:1px solid #ccc;
+          border-radius:6px; box-sizing:border-box; background:canvas; color:inherit; }
+  .row { display:flex; gap:.5rem; margin-top:1.25rem; }
+  button { flex:1; padding:.6rem; font-size:.95rem; border-radius:6px; cursor:pointer;
+           border:1px solid transparent; }
+  button.primary { background:#1a6ef5; color:#fff; }
+  button.secondary { background:transparent; border-color:#ccc; color:inherit; }
+  .error { color:#c0392b; font-size:.85rem; margin:0 0 1rem; }
+</style></head><body><main>
+<h1>Authorize ${escapeHtml(options.clientName)}</h1>
+<p class="lead">This will let it run speaking exams and read your practice history.</p>
+${error}
+<dl><dt>Application</dt><dd>${escapeHtml(options.clientName)}</dd>${resource}</dl>
+<form method="post" action="${CONSENT_PATH}">
+  <input type="hidden" name="rid" value="${escapeHtml(options.rid)}">
+  <label for="passcode">Passcode</label>
+  <input id="passcode" name="passcode" type="password" autocomplete="current-password"
+         autofocus required>
+  <div class="row">
+    <button class="secondary" type="submit" name="action" value="deny">Cancel</button>
+    <button class="primary" type="submit" name="action" value="approve">Authorize</button>
+  </div>
+</form>
+</main></body></html>`;
+}
+
+function redirectWithError(
+  res: Response,
+  redirectUri: string,
+  error: string,
+  state: string | undefined,
+): void {
+  const target = new URL(redirectUri);
+  target.searchParams.set("error", error);
+  if (state !== undefined) target.searchParams.set("state", state);
+  res.redirect(target.href);
+}
+
+export function consentRouter(provider: VivaOAuthProvider, config: AuthConfig): Router {
+  const router = express.Router();
+  const attempts = new Map<string, number>();
+
+  router.get(CONSENT_PATH, (req: Request, res: Response) => {
+    const rid = typeof req.query["rid"] === "string" ? req.query["rid"] : "";
+    const pending = provider.store.peekPending(rid);
+    if (!pending) {
+      res.status(400).type("html").send(
+        "<p>This authorization request has expired. Start again from the application.</p>",
+      );
+      return;
+    }
+    const client = provider.clientsStore.getClient(pending.clientId);
+    res
+      .type("html")
+      .send(
+        page({
+          rid,
+          clientName: client?.client_name ?? pending.clientId,
+          resource: pending.resource,
+        }),
+      );
+  });
+
+  router.post(CONSENT_PATH, express.urlencoded({ extended: false }), (req, res) => {
+    const body = req.body as Record<string, unknown>;
+    const rid = typeof body["rid"] === "string" ? body["rid"] : "";
+    const pending = provider.store.peekPending(rid);
+    if (!pending) {
+      res.status(400).type("html").send("<p>This authorization request has expired.</p>");
+      return;
+    }
+
+    if (body["action"] === "deny") {
+      provider.store.takePending(rid);
+      attempts.delete(rid);
+      redirectWithError(res, pending.redirectUri, "access_denied", pending.state);
+      return;
+    }
+
+    const given = typeof body["passcode"] === "string" ? body["passcode"] : "";
+    if (!passcodeMatches(given, config.passcode)) {
+      const count = (attempts.get(rid) ?? 0) + 1;
+      if (count >= MAX_ATTEMPTS) {
+        // Burn the request rather than allowing unlimited guesses against it.
+        provider.store.takePending(rid);
+        attempts.delete(rid);
+        redirectWithError(res, pending.redirectUri, "access_denied", pending.state);
+        return;
+      }
+      attempts.set(rid, count);
+      const client = provider.clientsStore.getClient(pending.clientId);
+      res
+        .status(401)
+        .type("html")
+        .send(
+          page({
+            rid,
+            clientName: client?.client_name ?? pending.clientId,
+            resource: pending.resource,
+            error: `Incorrect passcode. ${MAX_ATTEMPTS - count} attempt${
+              MAX_ATTEMPTS - count === 1 ? "" : "s"
+            } remaining.`,
+          }),
+        );
+      return;
+    }
+
+    provider.store.takePending(rid);
+    attempts.delete(rid);
+
+    const code = provider.store.issueCode(
+      {
+        clientId: pending.clientId,
+        redirectUri: pending.redirectUri,
+        codeChallenge: pending.codeChallenge,
+        scopes: pending.scopes,
+        resource: pending.resource,
+      },
+      config.authorizationCodeTtlSeconds,
+    );
+
+    const target = new URL(pending.redirectUri);
+    target.searchParams.set("code", code);
+    if (pending.state !== undefined) target.searchParams.set("state", pending.state);
+    res.redirect(target.href);
+  });
+
+  return router;
+}

@@ -93,3 +93,51 @@ interface exact-optional-safe without affecting anyone else.
 *Status:* upstream fix candidate — this is the intended **Open Source mini-challenge**
 contribution. Small, self-contained, and verifiable with a single `tsc` run.
 
+---
+
+## FRICTION-006 · The Alexa+ docs name the wrong well-known endpoint
+
+The MCP QuickStart's OAuth requirements say:
+
+> Host Protected Resource Metadata at `/.well-known/oauth-authorization-server`
+
+These are two different documents from two different RFCs, and they are not interchangeable:
+
+| Document | RFC | Well-known path | Who hosts it |
+|---|---|---|---|
+| Protected Resource Metadata | RFC 9728 | `/.well-known/oauth-protected-resource` | the **resource server** |
+| Authorization Server Metadata | RFC 8414 | `/.well-known/oauth-authorization-server` | the **authorization server** |
+
+A developer following the instruction literally would publish resource metadata at the
+authorization-server path, and a spec-compliant client looking for
+`/.well-known/oauth-protected-resource` would find nothing - which is also what the
+`WWW-Authenticate: ... resource_metadata=` header points at.
+
+*Cost:* ~20 minutes deciding whether Amazon meant something unusual or the doc was wrong.
+*Resolution:* served both documents at their correct RFC paths, which satisfies either reading.
+*What would have helped:* naming both documents and their correct paths, and saying whether
+Alexa+ expects the add-on to be its own authorization server or to delegate to one.
+
+---
+
+## FRICTION-007 · Returning the wrong OAuth error silently breaks token refresh
+
+`OAuthServerProvider.verifyAccessToken` is typed `Promise<AuthInfo>` and its doc comment
+says only "Verifies an access token." Nothing states which error to throw on failure - but
+the choice decides the HTTP status a client sees:
+
+- `InvalidTokenError` -> **401** + `WWW-Authenticate` challenge (correct, per RFC 6750)
+- any other `OAuthError` -> **400** with no challenge
+
+I first threw `InvalidGrantError`, which is the right error at the *token* endpoint and the
+wrong one at a *resource* server. Everything still appeared to work - tokens were rejected -
+but a real client would never learn it should re-authenticate, so expiry would surface as an
+unexplained 400 instead of a refresh. Our own end-to-end test caught it; a unit test of the
+provider alone would not have.
+
+*Cost:* ~15 minutes, and it would have been a production bug that only appeared an hour
+after any successful login, when the first access token expired.
+*What would have helped:* one line on `verifyAccessToken` - "throw `InvalidTokenError` if the
+token is invalid or expired" - or narrowing the throws in the interface's documentation.
+*Status:* second upstream contribution candidate, alongside FRICTION-005.
+

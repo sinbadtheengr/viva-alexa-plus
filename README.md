@@ -42,24 +42,33 @@ transitions and timing, which is what a plain conversational model cannot do on 
 
 ## Status
 
-**F-1, F-2, F-3 and F-4 are done** — 67 tests green, build clean. A real MCP client
-connects over Streamable HTTP and runs an exam end to end in both locales.
+**F-1, F-2, F-3, F-4 and F-9 are done** - 92 tests green, build clean.
 
-Measured on a live server: HTTP round trips 0.8–7.8 ms, tool execution 0.07–0.17 ms
-against budgets of 50–150 ms. Every tool call is logged with its duration and whether it
-breached budget.
+Auth is OAuth 2.1 + PKCE (S256), mounted from the MCP SDK's own authorization router so the
+endpoint behaviour and metadata documents are its tested ones. Verified live: `/mcp` answers
+401 with a `WWW-Authenticate` challenge naming the protected-resource metadata, `S256` is the
+only challenge method advertised, and no registration endpoint exists (Dynamic Client
+Registration is off, per F-9 - Alexa+ does not support it). Authorization codes are single
+use and burned on failure, tokens are stored only as SHA-256 digests, refresh tokens rotate,
+and every token is audience-bound to the RFC 8707 `resource` it was issued for.
 
-Not started: F-5/F-6 (Bedrock follow-ups and rubric scoring — the `Scorer` seam exists and
-reports honestly that no grader is connected), F-7 (progress keying, blocked on GAP-007),
-F-8 (MCP Apps UI), **F-9 (OAuth 2.1 + PKCE — the server is currently unauthenticated and
-must not be exposed publicly)**.
+Not started: F-5/F-6 (Bedrock follow-ups and rubric scoring - the `Scorer` seam exists and
+reports honestly that no grader is connected), F-7 (progress keying, blocked on GAP-007 and
+GAP-011), F-8 (MCP Apps UI).
 
 ```bash
 npm install
 npm run build && npm test
-npm start                     # http://127.0.0.1:8787/mcp
-curl http://127.0.0.1:8787/healthz
 ```
+
+```bash
+export VIVA_DEMO_PASSCODE='pick-something'
+export VIVA_OAUTH_CLIENTS='[{"client_id":"alexa-plus","client_name":"Alexa+","redirect_uris":["https://example.com/cb"]}]'
+npm start
+```
+
+The server refuses to start with auth enabled and no passcode. `VIVA_AUTH_DISABLED=1`
+turns auth off for local development only.
 
 ## License
 

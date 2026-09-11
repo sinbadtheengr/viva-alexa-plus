@@ -144,3 +144,37 @@ enforced by the loader rather than by good intentions — an undocumented corpus
 fails to load.
 
 **Resolved 2026-09-11: kept and written into F-2.** Spec and code now agree.
+
+---
+
+## GAP-010 · S3 · OPEN · Token revocation is not implemented
+
+F-9 lists what must be built (authorization code + PKCE, 401, metadata, `resource`) and what
+must not (DCR, OIDC, step-up). Revocation appears in neither list, so it was left out rather
+than decided ad hoc. The SDK mounts `/revoke` only when the provider implements `revokeToken`,
+so it is currently absent from the metadata too - which is at least self-consistent.
+
+The SDK's own interface calls omitting it "not recommended". It is perhaps fifteen lines:
+`revokeToken(client, request)` plus `AuthStore.revokeToken`, which already exists.
+
+*Action:* decide whether F-9 should require it. Low risk either way for a demo, but a
+long-lived refresh token with no way to revoke it is a poor default for anything real.
+
+---
+
+## GAP-011 · S2 · OPEN · User authentication is demo-grade
+
+The authorization server authenticates the *user* with a single shared passcode
+(`VIVA_DEMO_PASSCODE`), compared in constant time, with five attempts per authorization
+request. That is enough to demonstrate a correct OAuth 2.1 + PKCE flow and to keep the
+server closed by default, and it is honest about what it is - but it is not identity.
+
+Consequences today:
+- There is one user, so `owner()` is a constant and per-user progress (F-7) cannot be keyed
+  properly. This is the same blocker as GAP-007, arriving from the other direction.
+- There is no account recovery, no per-device revocation, no audit of who authorized what.
+
+*Action:* for anything beyond the hackathon, delegate user authentication to a real IdP and
+keep this server as a pure resource server - `mcpAuthMetadataRouter` exists for exactly that
+shape. Decide before F-7 is keyed, since the identity source determines the progress key.
+
