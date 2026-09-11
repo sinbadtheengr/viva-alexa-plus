@@ -2,6 +2,7 @@ import { createApp } from "./app.js";
 import { loadAuthConfig } from "./auth/config.js";
 import { CORPUS_ROOT } from "./config.js";
 import { Corpus } from "./exam/corpus.js";
+import { createScorer, loadScorerConfig } from "./grading/config.js";
 import { createLogger } from "./mcp/logging.js";
 import { SERVER_VERSION } from "./mcp/server.js";
 
@@ -20,7 +21,19 @@ async function main(): Promise<void> {
 
   logger.log({ event: "corpus_loaded", items: corpus.list().length, locales: corpus.locales() });
 
-  const { app, provider, close } = await createApp({ corpus, auth, logger });
+  const scorerConfig = loadScorerConfig();
+  const scorer = createScorer(scorerConfig, logger);
+  logger.log({
+    event: "scorer",
+    name: scorer.name,
+    enabled: scorerConfig.enabled,
+    ...(scorerConfig.enabled ? { region: scorerConfig.region, model: scorerConfig.model } : {}),
+    ...(scorerConfig.enabled
+      ? {}
+      : { note: "Set VIVA_BEDROCK_REGION to enable rubric scoring (F-6)." }),
+  });
+
+  const { app, provider, close } = await createApp({ corpus, auth, logger, scorer });
 
   if (provider) {
     // Expired codes and tokens should not accumulate for the life of the process.

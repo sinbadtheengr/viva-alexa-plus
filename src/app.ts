@@ -10,6 +10,7 @@ import type { AuthConfig } from "./auth/config.js";
 import { consentRouter } from "./auth/consent.js";
 import { VivaOAuthProvider } from "./auth/provider.js";
 import type { Corpus } from "./exam/corpus.js";
+import type { Scorer } from "./grading/types.js";
 import { createLogger, type Logger } from "./mcp/logging.js";
 import { buildServer, SERVER_VERSION } from "./mcp/server.js";
 
@@ -25,6 +26,8 @@ export interface AppOptions {
   readonly corpus: Corpus;
   readonly auth: AuthConfig;
   readonly logger?: Logger;
+  /** F-6 grader. Defaults to the honest "no grader connected" stand-in. */
+  readonly scorer?: Scorer;
 }
 
 export interface BuiltApp {
@@ -35,7 +38,11 @@ export interface BuiltApp {
 
 export async function createApp(options: AppOptions): Promise<BuiltApp> {
   const logger = options.logger ?? createLogger();
-  const { server } = buildServer({ corpus: options.corpus, logger });
+  const { server } = buildServer({
+    corpus: options.corpus,
+    logger,
+    ...(options.scorer ? { scorer: options.scorer } : {}),
+  });
 
   const transport = new StreamableHTTPServerTransport({
     sessionIdGenerator: () => randomUUID(),

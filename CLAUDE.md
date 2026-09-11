@@ -5,7 +5,7 @@ require no product judgment. If a spec forces a decision, that is a defect in th
 raise it in GAPS_AND_ISSUES.md rather than deciding ad hoc.
 
 **Stack:** TypeScript, Node 24, `@modelcontextprotocol/sdk`, `@modelcontextprotocol/ext-apps`,
-`@aws-sdk/client-bedrock-runtime`, `zod`, `vitest`. No database in v1 — sessions in memory,
+`express`, `@anthropic-ai/bedrock-sdk` (Mantle client) + `@anthropic-ai/sdk`, `zod`, `vitest`. No database in v1 — sessions in memory,
 progress in a JSON store behind an interface so it can be swapped.
 
 **Hard rules**
@@ -111,11 +111,24 @@ the seed question is used and the result is discarded. Failure is silent by desi
 **Fluency & Coherence**, **Lexical Resource**, **Grammatical Range & Accuracy**.
 
 Output per criterion: band 1–9 (IELTS) or CEFR A1–C2 (TCF), one sentence of evidence
-quoting the candidate, and one concrete improvement. Validate the model's output against
-the allowed band/level set; on invalid output retry once at temperature 0, then return a
-`partial` result rather than a fabricated score.
+quoting the candidate, and one concrete improvement.
+
+The allowed band set is baked into a per-exam structured-output schema
+(`output_config.format`), so an out-of-scale level cannot be produced. Validate the result
+again independently anyway; on invalid output **retry once at `effort: "max"`**, restating
+what was wrong. *(Ratified from GAP-012: the original spec said "temperature 0", which
+Claude Opus 5 rejects with a 400 — sampling parameters were removed. Effort is the
+equivalent lever.)*
+
+Then return a `partial` result carrying only the criteria that verified, with a note saying
+how many were left out. Never merge two attempts into one score, and never pad a partial
+result up to three. A model or network failure is `unavailable`, never a low band.
 
 Prompt must state that audio was unavailable and pronunciation is not assessed (GAP-004).
+
+Scoring is opt-in: with no `VIVA_BEDROCK_REGION` the server runs the honest
+`UnavailableScorer` and never loads the AWS client. Bedrock model ids carry the
+`anthropic.` prefix (`anthropic.claude-opus-5`).
 
 Pass per-turn `overrun` and the session's `overrunSeconds` into the rubric prompt as
 evidence under Fluency & Coherence (F-3, ratified from GAP-008). Running well past the

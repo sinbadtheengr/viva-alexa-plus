@@ -178,3 +178,37 @@ Consequences today:
 keep this server as a pure resource server - `mcpAuthMetadataRouter` exists for exactly that
 shape. Decide before F-7 is keyed, since the identity source determines the progress key.
 
+---
+
+## GAP-012 · S2 · CLOSED · F-6 specified a `temperature` the model rejects
+
+F-6 said to "retry once at temperature 0" on invalid rubric output. **Claude Opus 5 removed
+sampling parameters**: sending `temperature`, `top_p` or `top_k` returns a 400. The spec was
+written against an older API shape, so following it literally would have made every retry
+fail - and the retry path only runs when something has already gone wrong, so this would
+have stayed invisible until the first malformed response in production.
+
+**Resolved 2026-09-11.** Two changes, both ratified into F-6:
+
+1. The allowed band set is baked into a per-exam structured-output schema, so an
+   out-of-scale level cannot be generated in the first place. Validation still runs
+   independently - if the guarantee ever slips we drop the score rather than report it.
+2. The retry raises `effort` from `high` to `max` and restates what was rejected. Effort is
+   the current lever for "think harder and be stricter"; temperature no longer exists.
+
+This is a forced correction rather than a judgement call - there is no configuration in
+which the original instruction works - but it is recorded here because the spec changed.
+
+---
+
+## GAP-013 · S3 · CLOSED · F-6's named Bedrock SDK is the legacy path
+
+F-6's stack line named `@aws-sdk/client-bedrock-runtime`, the InvokeModel path. Anthropic's
+current guidance for Bedrock is the **Mantle client** (`@anthropic-ai/bedrock-sdk` ->
+`AnthropicBedrockMantle`), which exposes the same `messages.*` surface as the first-party
+SDK - so structured outputs, effort and the rest work without a second dialect, and the
+grading code would port to the first-party API by swapping one constructor.
+
+**Resolved 2026-09-11.** Swapped, and the stack line in CLAUDE.md updated.
+`@aws-sdk/client-bedrock-runtime` removed from the dependency tree.
+
