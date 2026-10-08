@@ -1,6 +1,8 @@
 import { createApp } from "./app.js";
 import { loadAuthConfig } from "./auth/config.js";
-import { CORPUS_ROOT } from "./config.js";
+import { CORPUS_ROOT, PROGRESS_FILE } from "./config.js";
+import { FileProgressStore } from "./grading/progress-file.js";
+import { InMemoryProgressStore } from "./grading/progress.js";
 import { Corpus } from "./exam/corpus.js";
 import { createScorer, loadScorerConfig } from "./grading/config.js";
 import { createLogger } from "./mcp/logging.js";
@@ -33,7 +35,16 @@ async function main(): Promise<void> {
       : { note: "Set VIVA_BEDROCK_REGION to enable rubric scoring (F-6)." }),
   });
 
-  const { app, provider, close } = await createApp({ corpus, auth, logger, scorer });
+  // F-7 · Persisted history when VIVA_PROGRESS_FILE is set. A corrupt file
+  // throws here, so the server refuses to start rather than overwrite it.
+  const progress = PROGRESS_FILE ? new FileProgressStore(PROGRESS_FILE) : new InMemoryProgressStore();
+  logger.log({
+    event: "progress_store",
+    backend: PROGRESS_FILE ? "file" : "memory",
+    ...(PROGRESS_FILE ? { path: PROGRESS_FILE } : { note: "Set VIVA_PROGRESS_FILE to keep history across restarts." }),
+  });
+
+  const { app, provider, close } = await createApp({ corpus, auth, logger, scorer, progress });
 
   if (provider) {
     // Expired codes and tokens should not accumulate for the life of the process.

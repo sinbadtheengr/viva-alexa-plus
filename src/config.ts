@@ -11,3 +11,9 @@ export const CORPUS_ROOT = process.env["VIVA_CORPUS_ROOT"] ?? "corpus";
 
 /** F-3: sessions expire after 30 minutes idle. */
 export const SESSION_IDLE_MS = 30 * 60 * 1000;
+
+/**
+ * F-7 · Where progress history is persisted. Unset = in-memory only (history is
+ * lost on restart); tests and casual dev runs stay file-free.
+ */
+export const PROGRESS_FILE: string | undefined = process.env["VIVA_PROGRESS_FILE"] || undefined;

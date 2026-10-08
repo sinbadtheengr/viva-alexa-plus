@@ -326,6 +326,7 @@ export function registerTools(server: McpServer, deps: ToolDeps): void {
         // score, not for a lecture about tokens. get_progress is where a missing
         // identity actually matters, and that is where it is said out loud.
         const subject = identify(extra);
+        let recorded = false;
         if (subject === null) {
           logger.log({
             event: "warning",
@@ -334,14 +335,25 @@ export function registerTools(server: McpServer, deps: ToolDeps): void {
             message: "No grant subject on this connection — progress not recorded.",
           });
         } else {
-          progress.append({
-            owner: subject,
-            at: now(),
-            exam: session.exam,
-            part: session.part,
-            topic: item?.topic ?? "unknown",
-            scores: outcome.scores,
-          });
+          // A failed disk write must not cost the candidate their marks.
+          try {
+            progress.append({
+              owner: subject,
+              at: now(),
+              exam: session.exam,
+              part: session.part,
+              topic: item?.topic ?? "unknown",
+              scores: outcome.scores,
+            });
+            recorded = true;
+          } catch (error) {
+            logger.log({
+              event: "warning",
+              tool: "get_results",
+              sessionId,
+              message: `Progress not recorded: ${error instanceof Error ? error.message : String(error)}`,
+            });
+          }
         }
         sessions.completeScoring(sessionId);
 
@@ -360,7 +372,7 @@ export function registerTools(server: McpServer, deps: ToolDeps): void {
             status: outcome.status,
             scores: outcome.scores.map((s) => ({ ...s, label: CRITERION_LABELS[s.criterion] })),
             pronunciationAssessed: false,
-            progressRecorded: subject !== null,
+            progressRecorded: recorded,
             ...(outcome.status === "partial" ? { note: outcome.note } : {}),
           },
         );

@@ -70,9 +70,15 @@ A session that cannot be attributed to a subject is not recorded at all: the mar
 read out, but nothing is filed under a shared fallback key where it would mix two candidates'
 histories together.
 
-Not started: F-5 (Bedrock-generated follow-up probes), F-8 (MCP Apps UI). The progress store
-is still in memory, so a restart clears it - the JSON-backed store the stack calls for is not
-written yet.
+Not started: F-5 (Bedrock-generated follow-up probes), F-8 (MCP Apps UI).
+
+Progress history is persisted when `VIVA_PROGRESS_FILE` is set to a file path (for example
+`data/progress.json`, which is git-ignored); unset, history lives in memory and a restart
+clears it. The file is written atomically (temp file, fsync, rename), holds only per-subject
+session records and never tokens, and a missing file simply starts an empty history. A file
+that exists but is corrupt is never overwritten: the server refuses to start and names the
+file, so you can repair it or move it aside. Appends are serialized within a process; run one
+server process per file (there is no cross-process lock).
 
 ```bash
 npm install
@@ -83,6 +89,7 @@ npm run build && npm test
 export VIVA_DEMO_PASSCODE='pick-something'
 export VIVA_OAUTH_CLIENTS='[{"client_id":"alexa-plus","client_name":"Alexa+","redirect_uris":["https://example.com/cb"]}]'
 export VIVA_BEDROCK_REGION='us-east-1'   # omit to run without a grader
+export VIVA_PROGRESS_FILE='data/progress.json'   # omit to keep progress in memory only
 npm start
 ```
 

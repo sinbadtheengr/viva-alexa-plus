@@ -11,6 +11,7 @@ import { consentRouter } from "./auth/consent.js";
 import { LOCAL_SUBJECT } from "./auth/identity.js";
 import { VivaOAuthProvider } from "./auth/provider.js";
 import type { Corpus } from "./exam/corpus.js";
+import type { ProgressStore } from "./grading/progress.js";
 import type { Scorer } from "./grading/types.js";
 import { createLogger, type Logger } from "./mcp/logging.js";
 import { buildServer, SERVER_VERSION } from "./mcp/server.js";
@@ -29,6 +30,8 @@ export interface AppOptions {
   readonly logger?: Logger;
   /** F-6 grader. Defaults to the honest "no grader connected" stand-in. */
   readonly scorer?: Scorer;
+  /** F-7 progress store. Defaults to in-memory. */
+  readonly progress?: ProgressStore;
 }
 
 export interface BuiltApp {
@@ -49,6 +52,7 @@ export async function createApp(options: AppOptions): Promise<BuiltApp> {
     // which is itself local-only and already warned about below.
     ...(options.auth.enabled ? {} : { identify: () => LOCAL_SUBJECT }),
     ...(options.scorer ? { scorer: options.scorer } : {}),
+    ...(options.progress ? { progress: options.progress } : {}),
   });
 
   const transport = new StreamableHTTPServerTransport({

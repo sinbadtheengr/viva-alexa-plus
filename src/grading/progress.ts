@@ -38,17 +38,30 @@ function numericBand(band: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+/** F-7 · An unattributed record is never stored, under any backend. */
+export function assertAttributed(owner: string): void {
+  if (typeof owner !== "string" || owner.trim() === "") {
+    throw new Error("Refusing to store a progress record with no owner (F-7).");
+  }
+}
+
 export class InMemoryProgressStore implements ProgressStore {
   readonly #byOwner = new Map<string, ProgressRecord[]>();
 
   append(record: ProgressRecord): void {
+    assertAttributed(record.owner);
     const existing = this.#byOwner.get(record.owner);
     if (existing) existing.push(record);
     else this.#byOwner.set(record.owner, [record]);
   }
 
   summarize(owner: string): ProgressSummary {
-    const records = this.#byOwner.get(owner) ?? [];
+    return summarizeRecords(this.#byOwner.get(owner) ?? []);
+  }
+}
+
+export function summarizeRecords(records: readonly ProgressRecord[]): ProgressSummary {
+  {
     if (records.length === 0) {
       return { sessionCount: 0, weakest: null, recurringTopics: [] };
     }
