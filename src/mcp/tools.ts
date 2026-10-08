@@ -10,6 +10,7 @@ import type { SessionStore } from "../exam/session.js";
 import type { ProgressStore } from "../grading/progress.js";
 import type { Scorer } from "../grading/types.js";
 import { CRITERION_LABELS } from "../grading/types.js";
+import type { ProbeCoordinator } from "../probes/probes.js";
 import type { Logger } from "./logging.js";
 
 /**
@@ -29,6 +30,8 @@ export interface ToolDeps {
   readonly scorer: Scorer;
   readonly progress: ProgressStore;
   readonly logger: Logger;
+  /** F-5 - optional; without it every follow-up is a corpus seed. */
+  readonly probes?: ProbeCoordinator;
   /**
    * F-7 · Resolves the caller to a progress key, or null when this connection
    * carries no identity. Defaults to the OAuth grant subject on the request's
@@ -92,7 +95,7 @@ function fail(error: unknown): ToolResult {
 }
 
 export function registerTools(server: McpServer, deps: ToolDeps): void {
-  const { corpus, sessions, scorer, progress, logger } = deps;
+  const { corpus, sessions, scorer, progress, logger, probes } = deps;
   const identify = deps.identify ?? ((extra: ToolExtra) => subjectOf(extra.authInfo));
   const now = deps.now ?? Date.now;
 
@@ -231,13 +234,32 @@ export function registerTools(server: McpServer, deps: ToolDeps): void {
     },
     async ({ sessionId, transcript }) =>
       run("submit_response", 150, () => {
-        const result = sessions.submitResponse(sessionId, transcript);
+        const result = sessions.submitResponse(
+          sessionId,
+          transcript,
+          probes ? (session) => probes.take(session) : undefined,
+        );
+        // F-5 - fired after the turn is recorded and deliberately not awaited:
+        // the answer below never depends on the model (hard rule 3).
+        if (probes && !result.exhausted) {
+          const item = corpus.byId(result.session.itemId);
+          probes.fire(result.session, {
+            sessionId,
+            exam: result.session.exam,
+            locale: result.session.locale,
+            part: result.session.part,
+            topic: item?.topic ?? "unknown",
+            prompt: item?.prompt ?? "",
+            transcript,
+          });
+        }
         const text = result.followUp ?? "Thank you. That is the end of this part.";
         return say(text, {
           view: "speaking",
           sessionId,
           phase: result.phase,
           followUp: result.followUp,
+          followUpSource: result.followUpSource,
           exhausted: result.exhausted,
           overrun: result.overrun,
           overrunSeconds: result.overrunSeconds,

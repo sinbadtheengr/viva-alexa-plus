@@ -3,6 +3,8 @@ import { loadAuthConfig } from "./auth/config.js";
 import { CORPUS_ROOT } from "./config.js";
 import { Corpus } from "./exam/corpus.js";
 import { createScorer, loadScorerConfig } from "./grading/config.js";
+import { createProbeGenerator, loadProbeConfig } from "./probes/bedrock.js";
+import { ProbeCoordinator } from "./probes/probes.js";
 import { createLogger } from "./mcp/logging.js";
 import { SERVER_VERSION } from "./mcp/server.js";
 
@@ -33,7 +35,15 @@ async function main(): Promise<void> {
       : { note: "Set VIVA_BEDROCK_REGION to enable rubric scoring (F-6)." }),
   });
 
-  const { app, provider, close } = await createApp({ corpus, auth, logger, scorer });
+  const probeConfig = loadProbeConfig();
+  const probes = new ProbeCoordinator({ generator: createProbeGenerator(probeConfig), logger });
+  logger.log({
+    event: "probes",
+    enabled: probeConfig.enabled,
+    ...(probeConfig.enabled ? { region: probeConfig.region, model: probeConfig.model } : {}),
+  });
+
+  const { app, provider, close } = await createApp({ corpus, auth, logger, scorer, probes });
 
   if (provider) {
     // Expired codes and tokens should not accumulate for the life of the process.

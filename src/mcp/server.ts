@@ -3,6 +3,7 @@ import { Corpus } from "../exam/corpus.js";
 import { SessionStore } from "../exam/session.js";
 import { InMemoryProgressStore, type ProgressStore } from "../grading/progress.js";
 import { UnavailableScorer, type Scorer } from "../grading/types.js";
+import type { ProbeCoordinator } from "../probes/probes.js";
 import { createLogger, type Logger } from "./logging.js";
 import { registerTools, type ToolExtra } from "./tools.js";
 
@@ -22,6 +23,8 @@ export interface BuildOptions {
   readonly scorer?: Scorer;
   readonly progress?: ProgressStore;
   readonly logger?: Logger;
+  /** F-5 - follow-up probe coordinator. Omit to always use corpus seeds. */
+  readonly probes?: ProbeCoordinator;
   /** F-7 · See ToolDeps.identify. Defaults to the OAuth grant subject. */
   readonly identify?: (extra: ToolExtra) => string | null;
   readonly now?: () => number;
@@ -58,6 +61,7 @@ export function buildServer(options: BuildOptions): BuiltServer {
     scorer,
     progress,
     logger,
+    ...(options.probes ? { probes: options.probes } : {}),
     ...(options.identify ? { identify: options.identify } : {}),
     ...(options.now ? { now: options.now } : {}),
   });

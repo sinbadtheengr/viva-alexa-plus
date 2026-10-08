@@ -42,7 +42,7 @@ transitions and timing, which is what a plain conversational model cannot do on 
 
 ## Status
 
-**F-1, F-2, F-3, F-4, F-6, F-7 and F-9 are done** - 126 tests green, build clean.
+**F-1, F-2, F-3, F-4, F-5, F-6, F-7 and F-9 are done** - 146 tests green, build clean.
 
 Rubric scoring runs on Claude Opus 5 via Amazon Bedrock (the Mantle client), with the
 allowed band set baked into a per-exam structured-output schema so an out-of-scale level
@@ -70,7 +70,13 @@ A session that cannot be attributed to a subject is not recorded at all: the mar
 read out, but nothing is filed under a shared fallback key where it would mix two candidates'
 histories together.
 
-Not started: F-5 (Bedrock-generated follow-up probes), F-8 (MCP Apps UI). The progress store
+Follow-up probes (F-5) are generated on Bedrock after each answer and used on the next turn
+only if they have already arrived and validate as one short question; otherwise the corpus
+seed is asked and the late result is dropped. Failures are silent to the caller. Opt-in via
+the same `VIVA_BEDROCK_REGION` (`VIVA_PROBES_DISABLED=1` turns just probes off). Untested
+against real Bedrock - the tests use fakes only. See GAP-014.
+
+Not started: F-8 (MCP Apps UI). The progress store
 is still in memory, so a restart clears it - the JSON-backed store the stack calls for is not
 written yet.
 
