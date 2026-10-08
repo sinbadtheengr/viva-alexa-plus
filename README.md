@@ -42,7 +42,7 @@ transitions and timing, which is what a plain conversational model cannot do on 
 
 ## Status
 
-**F-1, F-2, F-3, F-4, F-5, F-6, F-7 and F-9 are done** - 167 tests green, build clean.
+**F-1 to F-7 and F-9 are done; F-8 is built and checked in a stand-in host (see below)** - build clean, tests green.
 
 Rubric scoring runs on Claude Opus 5 via Amazon Bedrock (the Mantle client), with the
 allowed band set baked into a per-exam structured-output schema so an out-of-scale level
@@ -76,7 +76,20 @@ seed is asked and the late result is dropped. Failures are silent to the caller.
 the same `VIVA_BEDROCK_REGION` (`VIVA_PROBES_DISABLED=1` turns just probes off). Untested
 against real Bedrock - the tests use fakes only. See GAP-014.
 
-Not started: F-8 (MCP Apps UI).
+F-8 (MCP Apps UI): three self-contained views (cue card, speaking, results) are served as
+`ui://viva/*.html` resources with mime type `text/html;profile=mcp-app` and linked from the tools
+through `_meta.ui.resourceUri` (and the legacy `ui/resourceUri`): `start_exam` and
+`advance_phase` -> cue card, `get_status` and `submit_response` -> speaking, `get_results` ->
+results. Every view's content is also in the tool text, so voice-only still works. Countdowns
+run from the server's `phaseDeadline`/`serverNow` (additive structuredContent fields), never a
+client clock. Results render pending, partial (with the server's "left out" note), unavailable
+and complete exactly as returned and never show pronunciation. Verified: resources list/read
+over MCP, tool metadata, no external URLs, no `innerHTML`, countdown maths, results payloads
+(`tests/mcp-apps.test.ts`), and a manual render in a browser at 1024x600 and 375x812, light and
+dark, driven by a stand-in host that answers the `ui/initialize` handshake. **Not verified:** any
+real MCP Apps host (Claude, an Echo Show or Alexa+), how a host sizes or sandboxes the iframe,
+and whether the microphone level meter is ever granted (it hides itself when refused; see
+GAP-015). No host was available, so treat on-device rendering as untested.
 
 Progress history is persisted when `VIVA_PROGRESS_FILE` is set to a file path (for example
 `data/progress.json`, which is git-ignored); unset, history lives in memory and a restart

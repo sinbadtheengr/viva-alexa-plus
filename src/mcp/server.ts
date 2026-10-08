@@ -4,6 +4,7 @@ import { SessionStore } from "../exam/session.js";
 import { InMemoryProgressStore, type ProgressStore } from "../grading/progress.js";
 import { UnavailableScorer, type Scorer } from "../grading/types.js";
 import type { ProbeCoordinator } from "../probes/probes.js";
+import { registerViewResources } from "../mcp-apps/register.js";
 import { createLogger, type Logger } from "./logging.js";
 import { registerTools, type ToolExtra } from "./tools.js";
 
@@ -65,6 +66,9 @@ export function buildServer(options: BuildOptions): BuiltServer {
     ...(options.identify ? { identify: options.identify } : {}),
     ...(options.now ? { now: options.now } : {}),
   });
+
+  // F-8 · MCP Apps views (cue card, speaking, results) the tools link to.
+  registerViewResources(server);
 
   return { server, sessions, progress, scorer, logger };
 }

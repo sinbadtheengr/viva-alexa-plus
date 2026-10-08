@@ -11,6 +11,7 @@ import type { ProgressStore } from "../grading/progress.js";
 import type { Scorer } from "../grading/types.js";
 import { CRITERION_LABELS } from "../grading/types.js";
 import type { ProbeCoordinator } from "../probes/probes.js";
+import { clockFields, uiToolMeta } from "../mcp-apps/register.js";
 import type { Logger } from "./logging.js";
 
 /**
@@ -107,10 +108,29 @@ export function registerTools(server: McpServer, deps: ToolDeps): void {
     }
   };
 
+  // F-8 · Lets the cue-card view keep showing the prompt once advance_phase
+  // replaces the start_exam result (each tool call is its own view instance).
+  const cueCardFields = (session: { itemId: string }) => {
+    const item = corpus.byId(session.itemId);
+    return item
+      ? {
+          prompt: item.prompt,
+          bullets: item.bullets ?? [],
+          exam: item.exam,
+          part: item.part,
+          locale: item.locale,
+          topic: item.topic,
+          prepSeconds: item.prepSeconds,
+          speakSeconds: item.speakSeconds,
+        }
+      : {};
+  };
+
   server.registerTool(
     "start_exam",
     {
       title: "Start a speaking exam",
+      _meta: uiToolMeta("cue"),
       description:
         "Begins a timed speaking-exam practice session and returns the examiner's opening prompt. " +
         "Call this when the user wants to practise speaking, sit a mock oral exam, or prepare for IELTS or TCF. " +
@@ -162,6 +182,7 @@ export function registerTools(server: McpServer, deps: ToolDeps): void {
           prepSeconds: item.prepSeconds,
           speakSeconds: item.speakSeconds,
           phase: session.phase,
+          ...clockFields(session, item, now()),
         });
       }),
   );
@@ -170,6 +191,7 @@ export function registerTools(server: McpServer, deps: ToolDeps): void {
     "get_status",
     {
       title: "Check the exam clock",
+      _meta: uiToolMeta("speaking"),
       description:
         "Reports which phase the session is in and how many seconds remain. " +
         "Call this when the user asks how long is left, or before deciding whether to prompt them. " +
@@ -180,13 +202,18 @@ export function registerTools(server: McpServer, deps: ToolDeps): void {
     async ({ sessionId }) =>
       run("get_status", 50, () => {
         const status = sessions.status(sessionId);
+        const session = sessions.get(sessionId);
         const clock =
           status.secondsRemaining === null
             ? "This phase is not timed."
             : status.overrun
               ? "Time is up for this phase."
               : `${status.secondsRemaining} seconds remaining.`;
-        return say(`Phase: ${status.phase}. ${clock}`, { view: "clock", ...status });
+        return say(`Phase: ${status.phase}. ${clock}`, {
+          view: "clock",
+          ...status,
+          ...clockFields(session, corpus.byId(session.itemId), now()),
+        });
       }),
   );
 
@@ -194,6 +221,7 @@ export function registerTools(server: McpServer, deps: ToolDeps): void {
     "advance_phase",
     {
       title: "Move the exam to its next phase",
+      _meta: uiToolMeta("cue"),
       description:
         "Moves the session forward: from the briefing into preparation time, or from preparation into speaking. " +
         "Call this once after start_exam to begin, and again when preparation time is up. " +
@@ -209,6 +237,8 @@ export function registerTools(server: McpServer, deps: ToolDeps): void {
           sessionId,
           phase: result.phase,
           secondsRemaining: result.secondsRemaining,
+          ...cueCardFields(result.session),
+          ...clockFields(result.session, corpus.byId(result.session.itemId), now()),
         });
       }),
   );
@@ -217,6 +247,7 @@ export function registerTools(server: McpServer, deps: ToolDeps): void {
     "submit_response",
     {
       title: "Record what the candidate said",
+      _meta: uiToolMeta("speaking"),
       description:
         "Records the candidate's spoken answer and returns the examiner's next follow-up question. " +
         "Call this every time the candidate finishes speaking, passing their words as faithfully as you received them — " +
@@ -303,6 +334,7 @@ export function registerTools(server: McpServer, deps: ToolDeps): void {
     "get_results",
     {
       title: "Read back the candidate's marks",
+      _meta: uiToolMeta("results"),
       description:
         "Returns the rubric scores once they are ready. If status is pending, say something brief and call again shortly. " +
         "Read each criterion with its band, the evidence, and the one improvement. " +

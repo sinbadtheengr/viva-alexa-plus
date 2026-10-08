@@ -161,3 +161,18 @@ The rubric adapter uses `effort` with `messages.parse`; the probe adapter uses i
 `messages.create` at `"low"`, assuming the Mantle surface accepts it there too. No credentials
 were available to try it, so this is the first line to check on a live run.
 
+
+## FRICTION-010 · `registerAppResource` does not type-check against the SDK it is built for
+
+`@modelcontextprotocol/ext-apps` 2.0.0's `registerAppResource` takes `McpUiAppResourceConfig`,
+which extends the SDK's `ResourceMetadata`. With `@modelcontextprotocol/sdk` 1.30.0 installed,
+passing the SDK's own documented `title` or `description` is rejected with "does not exist in
+type" - two errors in a row, each naming a field `ResourceMetadata` plainly has. I stopped
+fighting it and called `server.registerResource` directly with the exported
+`RESOURCE_MIME_TYPE`, which is all the helper adds. Also: the package ships no way to get a
+self-contained single-file view without a bundler (its `App` class needs bundling), so the
+views speak the small host protocol (`ui/initialize`, `ui/notifications/tool-result`) by hand
+in about 30 lines. The protocol types made that easy; a "no-bundler" note in the README would
+have saved the detour.
+
+*Cost:* ~20 minutes. *Status:* upstream issue candidate (the type mismatch).
