@@ -177,3 +177,80 @@ describe("F-2 · selection", () => {
     expect(corpus.byId("nope")).toBeUndefined();
   });
 });
+
+describe("F-2 · corpus quality (hard rule 1, GAP-002)", () => {
+  const words = (text: string): Set<string> =>
+    new Set(text.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").match(/[a-z0-9]+/g) ?? []);
+  const jaccard = (a: Set<string>, b: Set<string>): number => {
+    let shared = 0;
+    for (const w of a) if (b.has(w)) shared += 1;
+    return shared / (a.size + b.size - shared);
+  };
+
+  it("has unique ids", async () => {
+    const ids = (await Corpus.load(REPO_CORPUS)).list().map((e) => e.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("validates every item against the schema and keeps ids in step with their fields", async () => {
+    for (const entry of (await Corpus.load(REPO_CORPUS)).list()) {
+      expect(examItemSchema.safeParse(entry).success, entry.id).toBe(true);
+      expect(entry.id.startsWith(`${entry.exam}.p${entry.part}.${entry.topic}.`), entry.id).toBe(true);
+    }
+  });
+
+  it("gives every item at least three follow-up seeds", async () => {
+    for (const entry of (await Corpus.load(REPO_CORPUS)).list()) {
+      expect(entry.followUpSeeds.length, entry.id).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it("gives every part 2 item 3-4 cue-card bullets", async () => {
+    for (const entry of (await Corpus.load(REPO_CORPUS)).list().filter((e) => e.part === 2)) {
+      expect(entry.bullets?.length, entry.id).toBeGreaterThanOrEqual(3);
+      expect(entry.bullets?.length, entry.id).toBeLessThanOrEqual(4);
+    }
+  });
+
+  it("keeps IELTS part 2 at 60s prep / 120s speaking, and has no bullets elsewhere", async () => {
+    for (const entry of (await Corpus.load(REPO_CORPUS)).list().filter((e) => e.exam === "ielts")) {
+      if (entry.part === 2) {
+        expect([entry.prepSeconds, entry.speakSeconds], entry.id).toEqual([60, 120]);
+      } else {
+        expect(entry.prepSeconds, entry.id).toBe(0);
+        expect(entry.bullets, entry.id).toBeUndefined();
+      }
+    }
+  });
+
+  it("gives every IELTS topic with a part 2 a part 3 discussion, and covers 8+ topics", async () => {
+    const ielts = (await Corpus.load(REPO_CORPUS)).list().filter((e) => e.exam === "ielts" && e.locale === "en-US");
+    const topicsOf = (part: number) => new Set(ielts.filter((e) => e.part === part).map((e) => e.topic));
+    const part3 = topicsOf(3);
+    for (const topic of topicsOf(2)) expect(part3.has(topic), topic).toBe(true);
+    expect(topicsOf(2).size).toBeGreaterThanOrEqual(8);
+    for (const part of [1, 2, 3]) {
+      for (const topic of topicsOf(2)) {
+        expect(ielts.filter((e) => e.part === part && e.topic === topic).length, `p${part} ${topic}`).toBeGreaterThanOrEqual(2);
+      }
+    }
+  });
+
+  it("contains no near-duplicate prompts within an exam and part", async () => {
+    const all = (await Corpus.load(REPO_CORPUS)).list();
+    for (let i = 0; i < all.length; i++) {
+      for (let j = i + 1; j < all.length; j++) {
+        const a = all[i]!;
+        const b = all[j]!;
+        if (a.exam !== b.exam || a.part !== b.part) continue;
+        expect(jaccard(words(a.prompt), words(b.prompt)), `${a.id} vs ${b.id}`).toBeLessThan(0.7);
+      }
+    }
+  });
+
+  it("contains no duplicated follow-up seeds inside one item", async () => {
+    for (const entry of (await Corpus.load(REPO_CORPUS)).list()) {
+      expect(new Set(entry.followUpSeeds).size, entry.id).toBe(entry.followUpSeeds.length);
+    }
+  });
+});

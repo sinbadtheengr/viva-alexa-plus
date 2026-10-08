@@ -1,5 +1,5 @@
 {
-  "provenance": "Original content written for this project. Item wording, cue-card bullets and follow-up probes are authored from scratch. No text is reproduced from Cambridge, IDP, British Council or any other published exam material; only the public format of the test (part structure and timings) is reflected. See GAP-002.",
+  "provenance": "Original content written for this project, with AI assistance (Claude). Item wording, cue-card bullets and follow-up probes are newly authored, not copied or closely adapted from any source. No text is reproduced from Cambridge, IDP, British Council or any other published exam material; only the public format of the test (part structure and timings) is reflected. See GAP-002.",
   "items": [
     {
       "id": "ielts.p1.hometown.001",
@@ -44,6 +44,201 @@
         "What would change if you had to manage without it for a week?",
         "Do you use it more than you'd like to?",
         "How do you think people handled this before it existed?"
+      ]
+    },
+    {
+      "id": "ielts.p1.hometown.002",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 1,
+      "topic": "hometown",
+      "prompt": "Is there a part of your town or city that you always go back to? Tell me about it.",
+      "prepSeconds": 0,
+      "speakSeconds": 45,
+      "followUpSeeds": [
+        "What is it about that place that keeps you returning?",
+        "Who do you usually go there with?",
+        "Has it changed since you first started going?"
+      ]
+    },
+    {
+      "id": "ielts.p1.work.002",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 1,
+      "topic": "work",
+      "prompt": "What do you usually do in the first hour of your working or studying day?",
+      "prepSeconds": 0,
+      "speakSeconds": 45,
+      "followUpSeeds": [
+        "Is that a routine you chose or one that just developed?",
+        "What would an ideal start to the day look like for you?",
+        "Do you ever skip it when you are short of time?"
+      ]
+    },
+    {
+      "id": "ielts.p1.technology.002",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 1,
+      "topic": "technology",
+      "prompt": "Tell me about the last time a piece of technology frustrated you.",
+      "prepSeconds": 0,
+      "speakSeconds": 45,
+      "followUpSeeds": [
+        "How did you eventually deal with it?",
+        "Do you tend to fix problems yourself or ask someone?",
+        "Does that kind of frustration make you want to use less technology?"
+      ]
+    },
+    {
+      "id": "ielts.p1.journey.001",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 1,
+      "topic": "journey",
+      "prompt": "Let's talk about getting around. How do you usually travel on an ordinary weekday?",
+      "prepSeconds": 0,
+      "speakSeconds": 45,
+      "followUpSeeds": [
+        "Would you change anything about that if you could?",
+        "How long does it take, and does it feel too long?",
+        "How is it different at weekends?"
+      ]
+    },
+    {
+      "id": "ielts.p1.journey.002",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 1,
+      "topic": "journey",
+      "prompt": "When you go away for a few days, do you plan everything in advance or leave things open?",
+      "prepSeconds": 0,
+      "speakSeconds": 45,
+      "followUpSeeds": [
+        "Has leaving things open ever gone wrong for you?",
+        "Who in your family is the planner?",
+        "What is the one thing you always book first?"
+      ]
+    },
+    {
+      "id": "ielts.p1.teacher.001",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 1,
+      "topic": "teacher",
+      "prompt": "Let's talk about learning. What is something you have taught yourself recently?",
+      "prepSeconds": 0,
+      "speakSeconds": 45,
+      "followUpSeeds": [
+        "What made you want to learn it?",
+        "Where did you find the help you needed?",
+        "What was the hardest moment along the way?"
+      ]
+    },
+    {
+      "id": "ielts.p1.teacher.002",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 1,
+      "topic": "teacher",
+      "prompt": "Do you learn better on your own or together with other people?",
+      "prepSeconds": 0,
+      "speakSeconds": 45,
+      "followUpSeeds": [
+        "Can you give an example of a time when working with others helped?",
+        "Is there anything you can only learn alone?",
+        "Has your answer changed since you were younger?"
+      ]
+    },
+    {
+      "id": "ielts.p1.food.001",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 1,
+      "topic": "food",
+      "prompt": "Let's talk about food. What did you have for breakfast today, and is that typical for you?",
+      "prepSeconds": 0,
+      "speakSeconds": 45,
+      "followUpSeeds": [
+        "Do you think breakfast is an important meal?",
+        "Is there a food you eat at breakfast that you would not eat at other times?",
+        "How did your family eat in the mornings when you were young?"
+      ]
+    },
+    {
+      "id": "ielts.p1.food.002",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 1,
+      "topic": "food",
+      "prompt": "Do you enjoy cooking, or would you rather have someone else do it?",
+      "prepSeconds": 0,
+      "speakSeconds": 45,
+      "followUpSeeds": [
+        "What is the one dish you are confident making?",
+        "Who taught you to cook, if anyone?",
+        "Do you cook differently when you are cooking for guests?"
+      ]
+    },
+    {
+      "id": "ielts.p1.health.001",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 1,
+      "topic": "health",
+      "prompt": "Let's talk about looking after yourself. How do you usually unwind after a tiring day?",
+      "prepSeconds": 0,
+      "speakSeconds": 45,
+      "followUpSeeds": [
+        "Does that really help you recover?",
+        "Is it something you do alone or with others?",
+        "What do you do when you have no energy at all?"
+      ]
+    },
+    {
+      "id": "ielts.p1.health.002",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 1,
+      "topic": "health",
+      "prompt": "Have you ever tried to change a habit that was bad for you?",
+      "prepSeconds": 0,
+      "speakSeconds": 45,
+      "followUpSeeds": [
+        "What made you decide it was time?",
+        "What helped you most, or got in the way?",
+        "What advice would you give someone trying the same thing?"
+      ]
+    },
+    {
+      "id": "ielts.p1.environment.001",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 1,
+      "topic": "environment",
+      "prompt": "Let's talk about your surroundings. How much green space is there near where you live?",
+      "prepSeconds": 0,
+      "speakSeconds": 45,
+      "followUpSeeds": [
+        "How often do you actually use it?",
+        "Would you like there to be more?",
+        "How do people in your area generally treat it?"
+      ]
+    },
+    {
+      "id": "ielts.p1.environment.002",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 1,
+      "topic": "environment",
+      "prompt": "What, if anything, do you do at home to cut down on waste?",
+      "prepSeconds": 0,
+      "speakSeconds": 45,
+      "followUpSeeds": [
+        "Is it easy to keep up, or does it take effort?",
+        "Do the people you live with do the same?",
+        "What is one thing you know you could do better?"
       ]
     },
     {
@@ -110,6 +305,279 @@
       ]
     },
     {
+      "id": "ielts.p2.work.002",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 2,
+      "topic": "work",
+      "prompt": "I'd like you to describe a place where you do your best work or thinking. You have one minute to prepare, and then I'd like you to speak for two minutes.",
+      "bullets": [
+        "where the place is",
+        "what it looks and sounds like",
+        "what you usually do there",
+        "and explain why it suits you so well"
+      ],
+      "prepSeconds": 60,
+      "speakSeconds": 120,
+      "followUpSeeds": [
+        "Would you be as productive somewhere else?",
+        "Have you ever tried to recreate that atmosphere elsewhere?",
+        "Does anyone else share that space with you?"
+      ]
+    },
+    {
+      "id": "ielts.p2.journey.002",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 2,
+      "topic": "journey",
+      "prompt": "I'd like you to describe a day trip to a place you had not planned to visit. You have one minute to prepare, and then I'd like you to speak for two minutes.",
+      "bullets": [
+        "where the place was",
+        "how you ended up there",
+        "what you did while you were there",
+        "and explain whether you would return"
+      ],
+      "prepSeconds": 60,
+      "speakSeconds": 120,
+      "followUpSeeds": [
+        "Would you go back there on purpose?",
+        "Do you think surprises like that are better than planned outings?",
+        "Did you tell other people about it afterwards?"
+      ]
+    },
+    {
+      "id": "ielts.p2.teacher.002",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 2,
+      "topic": "teacher",
+      "prompt": "I'd like you to describe a skill you are trying to get better at. You have one minute to prepare, and then I'd like you to speak for two minutes.",
+      "bullets": [
+        "what the skill is",
+        "why you started",
+        "how you practice it",
+        "and explain what level you hope to reach"
+      ],
+      "prepSeconds": 60,
+      "speakSeconds": 120,
+      "followUpSeeds": [
+        "How do you know whether you are actually improving?",
+        "What would stop you from continuing?",
+        "Is there anyone you compare yourself with?"
+      ]
+    },
+    {
+      "id": "ielts.p2.hometown.001",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 2,
+      "topic": "hometown",
+      "prompt": "I'd like you to describe a building in your hometown that you know well. You have one minute to prepare, and then I'd like you to speak for two minutes.",
+      "bullets": [
+        "what the building is and where it stands",
+        "what it looks like",
+        "how people use it",
+        "and explain why it matters to you"
+      ],
+      "prepSeconds": 60,
+      "speakSeconds": 120,
+      "followUpSeeds": [
+        "Would visitors find it as interesting as you do?",
+        "Has its purpose changed over the years?",
+        "What would the area lose if it disappeared?"
+      ]
+    },
+    {
+      "id": "ielts.p2.hometown.002",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 2,
+      "topic": "hometown",
+      "prompt": "I'd like you to describe a local event or tradition from the place you grew up. You have one minute to prepare, and then I'd like you to speak for two minutes.",
+      "bullets": [
+        "what the event is",
+        "when and how it happens",
+        "who takes part",
+        "and explain what it means to the community"
+      ],
+      "prepSeconds": 60,
+      "speakSeconds": 120,
+      "followUpSeeds": [
+        "Do younger people still take part in the same way?",
+        "Would it make sense to someone from outside the area?",
+        "Has it become more or less commercial over time?"
+      ]
+    },
+    {
+      "id": "ielts.p2.technology.001",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 2,
+      "topic": "technology",
+      "prompt": "I'd like you to describe an app or gadget that made an everyday chore easier. You have one minute to prepare, and then I'd like you to speak for two minutes.",
+      "bullets": [
+        "what it is",
+        "when you started using it",
+        "how it works",
+        "and explain whether you would recommend it"
+      ],
+      "prepSeconds": 60,
+      "speakSeconds": 120,
+      "followUpSeeds": [
+        "Did it also create any new problems?",
+        "How did you do the same job before you had it?",
+        "Would you still use it if it became expensive?"
+      ]
+    },
+    {
+      "id": "ielts.p2.technology.002",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 2,
+      "topic": "technology",
+      "prompt": "I'd like you to describe a time when technology failed you at a bad moment. You have one minute to prepare, and then I'd like you to speak for two minutes.",
+      "bullets": [
+        "what stopped working",
+        "where and when it happened",
+        "what you did about it",
+        "and explain how the situation ended"
+      ],
+      "prepSeconds": 60,
+      "speakSeconds": 120,
+      "followUpSeeds": [
+        "What did that teach you about depending on it?",
+        "Did you have a back-up plan?",
+        "How did the other people involved react?"
+      ]
+    },
+    {
+      "id": "ielts.p2.food.001",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 2,
+      "topic": "food",
+      "prompt": "I'd like you to describe a meal you cooked or helped prepare for other people. You have one minute to prepare, and then I'd like you to speak for two minutes.",
+      "bullets": [
+        "who the meal was for",
+        "what you made",
+        "what went well or badly",
+        "and explain how people responded"
+      ],
+      "prepSeconds": 60,
+      "speakSeconds": 120,
+      "followUpSeeds": [
+        "Would you cook the same thing again for the same people?",
+        "What was the most stressful part of the preparation?",
+        "Did anyone offer to help, and did you let them?"
+      ]
+    },
+    {
+      "id": "ielts.p2.food.002",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 2,
+      "topic": "food",
+      "prompt": "I'd like you to describe a dish from your family that you hope to pass on. You have one minute to prepare, and then I'd like you to speak for two minutes.",
+      "bullets": [
+        "what the dish is",
+        "who usually makes it",
+        "when it is served",
+        "and explain why you want to keep it alive"
+      ],
+      "prepSeconds": 60,
+      "speakSeconds": 120,
+      "followUpSeeds": [
+        "Who in the family makes it best?",
+        "Does it change from one generation to the next?",
+        "Could someone outside the family make it just as well?"
+      ]
+    },
+    {
+      "id": "ielts.p2.health.001",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 2,
+      "topic": "health",
+      "prompt": "I'd like you to describe a form of exercise you tried and either kept up or gave up. You have one minute to prepare, and then I'd like you to speak for two minutes.",
+      "bullets": [
+        "what the activity was",
+        "how you came to try it",
+        "what you liked or disliked about it",
+        "and explain why you kept it up or stopped"
+      ],
+      "prepSeconds": 60,
+      "speakSeconds": 120,
+      "followUpSeeds": [
+        "Would you ever go back to it?",
+        "What would have made it easier to continue?",
+        "Did anyone encourage or discourage you?"
+      ]
+    },
+    {
+      "id": "ielts.p2.health.002",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 2,
+      "topic": "health",
+      "prompt": "I'd like you to describe a time when you really needed rest and had to force yourself to take it. You have one minute to prepare, and then I'd like you to speak for two minutes.",
+      "bullets": [
+        "what was making you tired",
+        "how you realised you needed a break",
+        "what you did to recover",
+        "and explain what you learned from it"
+      ],
+      "prepSeconds": 60,
+      "speakSeconds": 120,
+      "followUpSeeds": [
+        "What finally made you stop?",
+        "How did you feel afterwards?",
+        "Do you now notice the warning signs sooner?"
+      ]
+    },
+    {
+      "id": "ielts.p2.environment.001",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 2,
+      "topic": "environment",
+      "prompt": "I'd like you to describe a natural place near you that you would want to see protected. You have one minute to prepare, and then I'd like you to speak for two minutes.",
+      "bullets": [
+        "where the place is",
+        "what you can find there",
+        "who uses it",
+        "and explain why it deserves protection"
+      ],
+      "prepSeconds": 60,
+      "speakSeconds": 120,
+      "followUpSeeds": [
+        "Who do you think is responsible for looking after it?",
+        "Have you seen it threatened in any way?",
+        "What would you say to someone who wanted to build there?"
+      ]
+    },
+    {
+      "id": "ielts.p2.environment.002",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 2,
+      "topic": "environment",
+      "prompt": "I'd like you to describe a change you made in your life to be kinder to the environment. You have one minute to prepare, and then I'd like you to speak for two minutes.",
+      "bullets": [
+        "what you changed",
+        "what prompted it",
+        "what difficulties you ran into",
+        "and explain whether it was worth the effort"
+      ],
+      "prepSeconds": 60,
+      "speakSeconds": 120,
+      "followUpSeeds": [
+        "Was the change as hard as you expected?",
+        "Did other people notice or copy you?",
+        "What is the next change you might make?"
+      ]
+    },
+    {
       "id": "ielts.p3.work.001",
       "exam": "ielts",
       "locale": "en-US",
@@ -137,6 +605,231 @@
         "Who benefits most from that change?",
         "Could it be managed differently?",
         "Is there a cost that doesn't show up in the ticket price?"
+      ]
+    },
+    {
+      "id": "ielts.p3.work.002",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 3,
+      "topic": "work",
+      "prompt": "Let's talk about careers. Is it better for a society when people stay in one line of work, or when they change often?",
+      "prepSeconds": 0,
+      "speakSeconds": 60,
+      "followUpSeeds": [
+        "Does the answer depend on the type of job?",
+        "How should schools prepare people for that?",
+        "Who is most affected when careers keep shifting?"
+      ]
+    },
+    {
+      "id": "ielts.p3.journey.001",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 3,
+      "topic": "journey",
+      "prompt": "Let's consider travel and transport. Do you think people still value the journey itself, or only where they end up?",
+      "prepSeconds": 0,
+      "speakSeconds": 60,
+      "followUpSeeds": [
+        "Has faster travel changed what people expect?",
+        "Are there journeys that are better slow?",
+        "How might that attitude differ between generations?"
+      ]
+    },
+    {
+      "id": "ielts.p3.journey.002",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 3,
+      "topic": "journey",
+      "prompt": "How do you think transport in big cities will change over the next few decades?",
+      "prepSeconds": 0,
+      "speakSeconds": 60,
+      "followUpSeeds": [
+        "Who is likely to gain or lose from those changes?",
+        "What stands in the way of improving public transport?",
+        "Would you personally welcome those changes?"
+      ]
+    },
+    {
+      "id": "ielts.p3.teacher.001",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 3,
+      "topic": "teacher",
+      "prompt": "Let's discuss education. Is formal schooling still the best way to gain useful skills?",
+      "prepSeconds": 0,
+      "speakSeconds": 60,
+      "followUpSeeds": [
+        "What can people learn better outside the classroom?",
+        "Who should pay for ongoing learning in adult life?",
+        "How is the role of schools likely to change?"
+      ]
+    },
+    {
+      "id": "ielts.p3.teacher.002",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 3,
+      "topic": "teacher",
+      "prompt": "What qualities make someone good at teaching, as opposed to simply knowing a subject?",
+      "prepSeconds": 0,
+      "speakSeconds": 60,
+      "followUpSeeds": [
+        "Can those qualities be trained, or are they natural?",
+        "How much does a teacher's personality matter?",
+        "Do you think technology can replace some of those qualities?"
+      ]
+    },
+    {
+      "id": "ielts.p3.hometown.001",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 3,
+      "topic": "hometown",
+      "prompt": "Let's discuss where people live. Why do so many young people leave small towns for big cities?",
+      "prepSeconds": 0,
+      "speakSeconds": 60,
+      "followUpSeeds": [
+        "What do small towns lose when that happens?",
+        "What could small towns do to keep young people?",
+        "Do you think the trend will continue?"
+      ]
+    },
+    {
+      "id": "ielts.p3.hometown.002",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 3,
+      "topic": "hometown",
+      "prompt": "How important is it for a place to protect its old buildings and customs?",
+      "prepSeconds": 0,
+      "speakSeconds": 60,
+      "followUpSeeds": [
+        "Who should pay to keep them going?",
+        "When does protecting the past start to hold a place back?",
+        "Which things from your own area would you most want to protect?"
+      ]
+    },
+    {
+      "id": "ielts.p3.technology.001",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 3,
+      "topic": "technology",
+      "prompt": "Do you think people rely on technology too much for things they could do themselves?",
+      "prepSeconds": 0,
+      "speakSeconds": 60,
+      "followUpSeeds": [
+        "Which skills are most at risk of being lost?",
+        "Does it matter if those skills fade?",
+        "How could people keep a healthy balance?"
+      ]
+    },
+    {
+      "id": "ielts.p3.technology.002",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 3,
+      "topic": "technology",
+      "prompt": "How has technology changed the way people make and keep friendships?",
+      "prepSeconds": 0,
+      "speakSeconds": 60,
+      "followUpSeeds": [
+        "Are online friendships as meaningful as face-to-face ones?",
+        "Who is most affected by this, young or old?",
+        "What might be lost as more contact moves online?"
+      ]
+    },
+    {
+      "id": "ielts.p3.food.001",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 3,
+      "topic": "food",
+      "prompt": "Do you think people eat more healthily today than in the past?",
+      "prepSeconds": 0,
+      "speakSeconds": 60,
+      "followUpSeeds": [
+        "What has made healthy food easier or harder to find?",
+        "How much do advertising and price affect what people buy?",
+        "How might eating habits look in thirty years?"
+      ]
+    },
+    {
+      "id": "ielts.p3.food.002",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 3,
+      "topic": "food",
+      "prompt": "Should governments try to influence what people eat?",
+      "prepSeconds": 0,
+      "speakSeconds": 60,
+      "followUpSeeds": [
+        "What kind of measures would be acceptable?",
+        "Where does personal choice end and public responsibility begin?",
+        "Have you seen any such policy work well?"
+      ]
+    },
+    {
+      "id": "ielts.p3.health.001",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 3,
+      "topic": "health",
+      "prompt": "Whose responsibility is it to keep a population healthy: individuals, employers or governments?",
+      "prepSeconds": 0,
+      "speakSeconds": 60,
+      "followUpSeeds": [
+        "How can employers support health without being intrusive?",
+        "Is it fair to expect the same of rich and poor?",
+        "What would you prioritise if you had a limited budget?"
+      ]
+    },
+    {
+      "id": "ielts.p3.health.002",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 3,
+      "topic": "health",
+      "prompt": "Why do many people find it so hard to rest properly in modern life?",
+      "prepSeconds": 0,
+      "speakSeconds": 60,
+      "followUpSeeds": [
+        "How much of this is due to work culture?",
+        "What role does technology play?",
+        "What could society do to make rest easier?"
+      ]
+    },
+    {
+      "id": "ielts.p3.environment.001",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 3,
+      "topic": "environment",
+      "prompt": "Who should carry the main cost of protecting the environment: individuals, companies or governments?",
+      "prepSeconds": 0,
+      "speakSeconds": 60,
+      "followUpSeeds": [
+        "What happens when each group waits for the others to act?",
+        "Is it fair that poorer countries are asked to make the same sacrifices?",
+        "What do you think is the most effective single measure?"
+      ]
+    },
+    {
+      "id": "ielts.p3.environment.002",
+      "exam": "ielts",
+      "locale": "en-US",
+      "part": 3,
+      "topic": "environment",
+      "prompt": "Do you think individual choices make a real difference to environmental problems?",
+      "prepSeconds": 0,
+      "speakSeconds": 60,
+      "followUpSeeds": [
+        "Why do many people feel their actions do not matter?",
+        "Can small habits spread and add up?",
+        "Which matters more, personal habits or large-scale policy?"
       ]
     }
   ]
