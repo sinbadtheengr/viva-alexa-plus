@@ -1,5 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
+import { subjectOf } from "../auth/identity.js";
 import { DEFAULT_LOCALE } from "../config.js";
 import type { Corpus } from "../exam/corpus.js";
 import { PhaseViolationError, UnknownSessionError } from "../exam/errors.js";
@@ -28,11 +30,20 @@ export interface ToolDeps {
   readonly progress: ProgressStore;
   readonly logger: Logger;
   /**
-   * Whose progress record this is. A placeholder until GAP-007 settles how
-   * Alexa+ identifies a user to the server across turns.
+   * F-7 · Resolves the caller to a progress key, or null when this connection
+   * carries no identity. Defaults to the OAuth grant subject on the request's
+   * access token — see auth/identity.ts for why that and nothing else.
    */
-  readonly owner?: () => string;
+  readonly identify?: (extra: ToolExtra) => string | null;
   readonly now?: () => number;
+}
+
+/**
+ * The slice of the SDK's request context these handlers use. Declared
+ * structurally so a test can call a handler with a bare object.
+ */
+export interface ToolExtra {
+  readonly authInfo?: AuthInfo;
 }
 
 interface ToolResult {
@@ -82,7 +93,7 @@ function fail(error: unknown): ToolResult {
 
 export function registerTools(server: McpServer, deps: ToolDeps): void {
   const { corpus, sessions, scorer, progress, logger } = deps;
-  const owner = deps.owner ?? (() => "local");
+  const identify = deps.identify ?? ((extra: ToolExtra) => subjectOf(extra.authInfo));
   const now = deps.now ?? Date.now;
 
   const run = <T>(tool: string, budgetMs: number, fn: () => T): T | ToolResult => {
@@ -277,7 +288,7 @@ export function registerTools(server: McpServer, deps: ToolDeps): void {
         "Do not invent a pronunciation score or an overall band the tool did not return.",
       inputSchema: { sessionId: z.string().describe("From start_exam.") },
     },
-    async ({ sessionId }) =>
+    async ({ sessionId }, extra: ToolExtra) =>
       run("get_results", 100, () => {
         const session = sessions.get(sessionId);
         if (session.scoringHandle === null) {
@@ -306,14 +317,32 @@ export function registerTools(server: McpServer, deps: ToolDeps): void {
         }
 
         const item = corpus.byId(session.itemId);
-        progress.append({
-          owner: owner(),
-          at: now(),
-          exam: session.exam,
-          part: session.part,
-          topic: item?.topic ?? "unknown",
-          scores: outcome.scores,
-        });
+
+        // F-7 · A record with no owner is not a record. Behind requireBearerAuth
+        // every call carries a grant subject, so this is defence in depth — but
+        // filing the session under a shared fallback key would silently mix two
+        // candidates' histories together, which is worse than not filing it.
+        // The marks are still read out either way: the candidate asked for their
+        // score, not for a lecture about tokens. get_progress is where a missing
+        // identity actually matters, and that is where it is said out loud.
+        const subject = identify(extra);
+        if (subject === null) {
+          logger.log({
+            event: "warning",
+            tool: "get_results",
+            sessionId,
+            message: "No grant subject on this connection — progress not recorded.",
+          });
+        } else {
+          progress.append({
+            owner: subject,
+            at: now(),
+            exam: session.exam,
+            part: session.part,
+            topic: item?.topic ?? "unknown",
+            scores: outcome.scores,
+          });
+        }
         sessions.completeScoring(sessionId);
 
         const spoken = outcome.scores
@@ -331,6 +360,7 @@ export function registerTools(server: McpServer, deps: ToolDeps): void {
             status: outcome.status,
             scores: outcome.scores.map((s) => ({ ...s, label: CRITERION_LABELS[s.criterion] })),
             pronunciationAssessed: false,
+            progressRecorded: subject !== null,
             ...(outcome.status === "partial" ? { note: outcome.note } : {}),
           },
         );
@@ -347,12 +377,25 @@ export function registerTools(server: McpServer, deps: ToolDeps): void {
         "Do not call it mid-exam — it is about history, not the session in progress.",
       inputSchema: {},
     },
-    async () =>
+    async (_args, extra: ToolExtra) =>
       run("get_progress", 100, () => {
-        const summary = progress.summarize(owner());
+        // Without a subject there is no honest answer: any history we returned
+        // would be someone else's. Say so plainly and name the way out, rather
+        // than reporting an empty history the candidate has not earned.
+        const subject = identify(extra);
+        if (subject === null) {
+          return say(
+            "I can't tell whose practice history this is on this connection. " +
+              "Reconnect Viva and ask again.",
+            { view: "progress", status: "unidentified" },
+          );
+        }
+
+        const summary = progress.summarize(subject);
         if (summary.sessionCount === 0) {
           return say("No completed sessions yet. Finish an exam and I can track progress.", {
             view: "progress",
+            status: "ok",
             ...summary,
           });
         }
@@ -364,7 +407,7 @@ export function registerTools(server: McpServer, deps: ToolDeps): void {
               (summary.recurringTopics.length > 0
                 ? `, most often on ${summary.recurringTopics.join(" and ")}.`
                 : ".");
-        return say(text, { view: "progress", ...summary });
+        return say(text, { view: "progress", status: "ok", ...summary });
       }),
   );
 }

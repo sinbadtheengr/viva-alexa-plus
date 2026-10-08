@@ -139,7 +139,31 @@ treat it as a rule violation.
 
 Append one record per completed session: date, exam, part, topic, per-criterion score.
 `get_progress` returns the criterion with the lowest trailing-3 mean and the topics where
-it recurs. Blocked on GAP-007 (session identity) — build the store first, key it later.
+it recurs.
+
+### Whose record it is
+
+*(Ratified from GAP-007.)* Records are keyed on the **OAuth grant subject** — an identifier
+fixed when the user authenticates at the consent screen, carried on the authorization code,
+copied onto every access and refresh token minted from that code, and preserved across
+refresh rotation. It reaches the tools as `AuthInfo.extra.subject`.
+
+Never key progress on the bearer token (it rotates hourly), on `clientId` (that identifies
+Alexa+, not the person), or on any per-conversation identifier Alexa+ may pass (it resets
+every conversation, which is the one thing progress has to outlive). That last exclusion is
+what makes GAP-007's open question — how Alexa+ identifies a user across turns — irrelevant
+to this feature instead of blocking it.
+
+A record that cannot be attributed is **not written**. With no subject, `get_results` still
+reads the marks out and reports `progressRecorded: false`, and `get_progress` says it cannot
+tell whose history it is rather than reporting an empty one. Never file a session under a
+shared fallback key — that silently merges two candidates' histories, which is worse than
+not filing it at all.
+
+With one shared passcode there is exactly one user (GAP-011), so the subject is the constant
+`passcode:default` rather than a per-grant random id: re-pairing a device must not orphan the
+history it earned. The scheme prefix names the authentication method, so subjects minted by a
+real IdP later cannot collide with these.
 
 ## F-8 · MCP Apps UI
 

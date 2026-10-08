@@ -102,11 +102,31 @@ Record the demo video against the simulator. Treat certification as upside.
 
 ---
 
-## GAP-007 · S3 · OPEN · Session identity across turns
+## GAP-007 · S3 · CLOSED · Session identity across turns
 
 The state machine needs a stable session key. How Alexa+ identifies the user to the MCP
 server across turns (OAuth subject? per-conversation id?) needs confirming before the
 progress-tracking feature (F-7) is built on it.
+
+**Resolved 2026-09-18: key on the OAuth grant subject, and ignore whatever Alexa+ sends per
+conversation.** Ratified into CLAUDE.md under F-7.
+
+The question this gap asked could not be answered from the docs, and waiting for an answer
+would have left F-7 unbuilt — so the resolution removes the dependency instead of satisfying
+it. A subject is fixed when the user authenticates at the consent screen, rides the
+authorization code onto every token minted from it, survives refresh rotation, and arrives at
+the tools as `AuthInfo.extra.subject`. Whatever Alexa+ does per conversation, the grant is
+ours and it outlives the conversation.
+
+Rejected alternatives, each for a concrete reason: the bearer token rotates hourly, so a
+history keyed on it would die on every refresh; `clientId` identifies Alexa+ rather than the
+person; a per-conversation id resets exactly when progress is supposed to accumulate.
+
+The paired invariant is that a record which cannot be attributed is not written. Keying an
+unattributable session to a fallback constant would quietly merge two candidates' histories —
+so `get_results` reports `progressRecorded: false` (while still reading the marks out), and
+`get_progress` says it cannot tell whose history it is instead of reporting an empty one.
+Tests drive two subjects through one shared store to prove the separation is real.
 
 ---
 
@@ -170,13 +190,16 @@ request. That is enough to demonstrate a correct OAuth 2.1 + PKCE flow and to ke
 server closed by default, and it is honest about what it is - but it is not identity.
 
 Consequences today:
-- There is one user, so `owner()` is a constant and per-user progress (F-7) cannot be keyed
-  properly. This is the same blocker as GAP-007, arriving from the other direction.
+- There is one credential, so there is one grant subject (`passcode:default`). F-7 keys
+  progress on that subject through a real code path — the separation works, it is simply
+  degenerate while every authorization authenticates the same person. *(Updated 2026-09-18:
+  this no longer blocks F-7, which shipped keyed on the grant subject per GAP-007.)*
 - There is no account recovery, no per-device revocation, no audit of who authorized what.
 
 *Action:* for anything beyond the hackathon, delegate user authentication to a real IdP and
 keep this server as a pure resource server - `mcpAuthMetadataRouter` exists for exactly that
-shape. Decide before F-7 is keyed, since the identity source determines the progress key.
+shape. The swap is now confined to one place: whatever mints the subject at consent time.
+Subjects carry a scheme prefix (`passcode:`) so IdP-minted ones cannot collide with these.
 
 ---
 

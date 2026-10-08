@@ -42,7 +42,7 @@ transitions and timing, which is what a plain conversational model cannot do on 
 
 ## Status
 
-**F-1, F-2, F-3, F-4, F-6 and F-9 are done** - 120 tests green, build clean.
+**F-1, F-2, F-3, F-4, F-6, F-7 and F-9 are done** - 126 tests green, build clean.
 
 Rubric scoring runs on Claude Opus 5 via Amazon Bedrock (the Mantle client), with the
 allowed band set baked into a per-exam structured-output schema so an out-of-scale level
@@ -62,8 +62,17 @@ registration endpoint exists (Dynamic Client Registration is off, per F-9). Auth
 codes are single use and burned on failure, tokens are stored only as SHA-256 digests,
 refresh tokens rotate, and every token is audience-bound to its RFC 8707 `resource`.
 
-Not started: F-5 (Bedrock-generated follow-up probes), F-7 (progress keying, blocked on
-GAP-007 and GAP-011), F-8 (MCP Apps UI).
+Progress is keyed on the OAuth grant subject - fixed when the user authenticates at the
+consent screen, carried onto every token minted from that grant, and preserved across refresh
+rotation, so a history outlives both the token and the conversation. Deliberately not keyed on
+anything Alexa+ sends per conversation, which is what let F-7 ship without waiting on GAP-007.
+A session that cannot be attributed to a subject is not recorded at all: the marks are still
+read out, but nothing is filed under a shared fallback key where it would mix two candidates'
+histories together.
+
+Not started: F-5 (Bedrock-generated follow-up probes), F-8 (MCP Apps UI). The progress store
+is still in memory, so a restart clears it - the JSON-backed store the stack calls for is not
+written yet.
 
 ```bash
 npm install

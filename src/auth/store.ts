@@ -34,6 +34,8 @@ export interface PendingAuthorization {
 
 export interface AuthorizationCode {
   readonly clientId: string;
+  /** Who authenticated at the consent screen. Keys F-7 progress — see identity.ts. */
+  readonly subject: string;
   readonly redirectUri: string;
   readonly codeChallenge: string;
   readonly scopes: readonly string[];
@@ -43,6 +45,8 @@ export interface AuthorizationCode {
 
 export interface StoredToken {
   readonly clientId: string;
+  /** Carried from the grant, and preserved across refresh rotation (F-7). */
+  readonly subject: string;
   readonly scopes: readonly string[];
   /** RFC 8707 audience. A token is only valid for the resource it was issued for. */
   readonly resource: string | undefined;

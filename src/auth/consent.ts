@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import express, { type Request, type Response, type Router } from "express";
 import type { AuthConfig } from "./config.js";
+import { PASSCODE_SUBJECT } from "./identity.js";
 import { CONSENT_PATH, type VivaOAuthProvider } from "./provider.js";
 
 /**
@@ -176,6 +177,10 @@ export function consentRouter(provider: VivaOAuthProvider, config: AuthConfig): 
     const code = provider.store.issueCode(
       {
         clientId: pending.clientId,
+        // The passcode has just been verified, so this is the moment the user is
+        // authenticated — and therefore the moment the grant's subject is fixed.
+        // Everything F-7 keys progress on flows from here.
+        subject: PASSCODE_SUBJECT,
         redirectUri: pending.redirectUri,
         codeChallenge: pending.codeChallenge,
         scopes: pending.scopes,

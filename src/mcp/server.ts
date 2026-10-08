@@ -4,7 +4,7 @@ import { SessionStore } from "../exam/session.js";
 import { InMemoryProgressStore, type ProgressStore } from "../grading/progress.js";
 import { UnavailableScorer, type Scorer } from "../grading/types.js";
 import { createLogger, type Logger } from "./logging.js";
-import { registerTools } from "./tools.js";
+import { registerTools, type ToolExtra } from "./tools.js";
 
 /**
  * F-1 · Assembling the MCP server.
@@ -22,7 +22,8 @@ export interface BuildOptions {
   readonly scorer?: Scorer;
   readonly progress?: ProgressStore;
   readonly logger?: Logger;
-  readonly owner?: () => string;
+  /** F-7 · See ToolDeps.identify. Defaults to the OAuth grant subject. */
+  readonly identify?: (extra: ToolExtra) => string | null;
   readonly now?: () => number;
 }
 
@@ -57,7 +58,7 @@ export function buildServer(options: BuildOptions): BuiltServer {
     scorer,
     progress,
     logger,
-    ...(options.owner ? { owner: options.owner } : {}),
+    ...(options.identify ? { identify: options.identify } : {}),
     ...(options.now ? { now: options.now } : {}),
   });
 

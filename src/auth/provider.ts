@@ -107,7 +107,7 @@ export class VivaOAuthProvider implements OAuthServerProvider {
     }
     this.#assertResource(resource);
 
-    return this.#mint(entry.clientId, entry.scopes, entry.resource);
+    return this.#mint(entry.clientId, entry.subject, entry.scopes, entry.resource);
   }
 
   async exchangeRefreshToken(
@@ -131,9 +131,11 @@ export class VivaOAuthProvider implements OAuthServerProvider {
       }
     }
 
-    // Rotate: the presented refresh token is dead once it has been used.
+    // Rotate: the presented refresh token is dead once it has been used. The
+    // subject rides across the rotation — F-7 progress is keyed on it, and a
+    // history that reset every time a token refreshed would be worthless.
     this.store.revokeToken(refreshToken);
-    return this.#mint(entry.clientId, requested, entry.resource);
+    return this.#mint(entry.clientId, entry.subject, requested, entry.resource);
   }
 
   async verifyAccessToken(token: string): Promise<AuthInfo> {
@@ -150,17 +152,24 @@ export class VivaOAuthProvider implements OAuthServerProvider {
       clientId: entry.clientId,
       scopes: [...entry.scopes],
       expiresAt: Math.floor(entry.expiresAt / 1000),
+      // The grant subject reaches the tools here, and only here (F-7).
+      extra: { subject: entry.subject },
       ...(entry.resource ? { resource: new URL(entry.resource) } : {}),
     };
   }
 
-  #mint(clientId: string, scopes: readonly string[], resource: string | undefined): OAuthTokens {
+  #mint(
+    clientId: string,
+    subject: string,
+    scopes: readonly string[],
+    resource: string | undefined,
+  ): OAuthTokens {
     const accessToken = this.store.issueToken(
-      { clientId, scopes, resource, kind: "access" },
+      { clientId, subject, scopes, resource, kind: "access" },
       this.#config.accessTokenTtlSeconds,
     );
     const refreshToken = this.store.issueToken(
-      { clientId, scopes, resource, kind: "refresh" },
+      { clientId, subject, scopes, resource, kind: "refresh" },
       this.#config.accessTokenTtlSeconds * 24,
     );
     return {

@@ -50,7 +50,7 @@ async function connect(): Promise<Harness> {
     progress,
     logger: silentLogger,
     now: clock.now,
-    owner: () => "test-owner",
+    identify: () => "test-owner",
   });
 
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
@@ -376,5 +376,103 @@ describe("F-4 · progress", () => {
     await call(h.client, "get_results", { sessionId });
 
     expect(structured(await call(h.client, "get_progress"))["sessionCount"]).toBe(0);
+  });
+});
+
+/**
+ * F-7 · Progress belongs to whoever earned it.
+ *
+ * The key is the OAuth grant subject (see src/auth/identity.ts). These tests
+ * drive the tools with two different subjects over one shared store, which is
+ * the only way to prove the records are actually separated rather than all
+ * landing in the same bucket.
+ */
+describe("F-7 · whose progress this is", () => {
+  interface Shared {
+    progress: InMemoryProgressStore;
+    scorer: ScriptedScorer;
+    clock: ReturnType<typeof fakeClock>;
+  }
+
+  function shared(): Shared {
+    return {
+      progress: new InMemoryProgressStore(),
+      scorer: new ScriptedScorer(),
+      clock: fakeClock(),
+    };
+  }
+
+  /** A client speaking as `subject`, or as nobody at all when it is null. */
+  async function connectAs(subject: string | null, s: Shared): Promise<Client> {
+    const corpus = Corpus.fromItems([item(), unpreppedItem()]);
+    const { server } = buildServer({
+      corpus,
+      sessions: new SessionStore({ resolver: corpus, now: s.clock.now }),
+      scorer: s.scorer,
+      progress: s.progress,
+      logger: silentLogger,
+      now: s.clock.now,
+      identify: () => subject,
+    });
+    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+    const client = new Client({ name: "test", version: "0" });
+    await Promise.all([client.connect(clientTransport), server.connect(serverTransport)]);
+    return client;
+  }
+
+  /** Runs one exam through to scored results, and hands back get_results. */
+  async function scoredSession(client: Client, s: Shared): Promise<CallResult> {
+    const start = structured(await call(client, "start_exam", { exam: "ielts", part: 1 }));
+    const sessionId = start["sessionId"] as string;
+    await call(client, "advance_phase", { sessionId });
+    await call(client, "submit_response", { sessionId, transcript: "an answer" });
+    await call(client, "score_session", { sessionId });
+    s.scorer.outcome = {
+      status: "complete",
+      scores: [
+        { criterion: "fluency_coherence", band: "6", evidence: "e", improvement: "i" },
+        { criterion: "lexical_resource", band: "5", evidence: "e", improvement: "i" },
+      ],
+    };
+    return call(client, "get_results", { sessionId });
+  }
+
+  it("files a session under the caller's own identity, not a shared bucket", async () => {
+    const s = shared();
+    const ada = await connectAs("passcode:ada", s);
+    const blake = await connectAs("passcode:blake", s);
+
+    const results = await scoredSession(ada, s);
+
+    expect(structured(results)["progressRecorded"]).toBe(true);
+    expect(structured(await call(ada, "get_progress"))["sessionCount"]).toBe(1);
+    expect(structured(await call(blake, "get_progress"))["sessionCount"]).toBe(0);
+  });
+
+  it("still reads the marks out, but records nothing it cannot attribute", async () => {
+    const s = shared();
+    const anonymous = await connectAs(null, s);
+    const ada = await connectAs("passcode:ada", s);
+
+    const results = await scoredSession(anonymous, s);
+
+    // The candidate asked for their score, so they get their score.
+    expect(text(results)).toContain("Fluency & Coherence");
+    expect(structured(results)["progressRecorded"]).toBe(false);
+    // But it is not filed under anyone else's name.
+    expect(structured(await call(ada, "get_progress"))["sessionCount"]).toBe(0);
+  });
+
+  it("says it cannot tell whose history it is, rather than reporting an empty one", async () => {
+    const s = shared();
+    const anonymous = await connectAs(null, s);
+
+    const result = await call(anonymous, "get_progress");
+    const summary = structured(result);
+
+    expect(summary["status"]).toBe("unidentified");
+    // No session count at all: "0 sessions" would be a claim we cannot make.
+    expect(summary["sessionCount"]).toBeUndefined();
+    expect(text(result)).toContain("Reconnect");
   });
 });

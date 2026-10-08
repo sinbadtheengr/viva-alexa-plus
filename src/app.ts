@@ -8,6 +8,7 @@ import {
 import { requireBearerAuth } from "@modelcontextprotocol/sdk/server/auth/middleware/bearerAuth.js";
 import type { AuthConfig } from "./auth/config.js";
 import { consentRouter } from "./auth/consent.js";
+import { LOCAL_SUBJECT } from "./auth/identity.js";
 import { VivaOAuthProvider } from "./auth/provider.js";
 import type { Corpus } from "./exam/corpus.js";
 import type { Scorer } from "./grading/types.js";
@@ -41,6 +42,12 @@ export async function createApp(options: AppOptions): Promise<BuiltApp> {
   const { server } = buildServer({
     corpus: options.corpus,
     logger,
+    // F-7 · With auth on, progress is keyed on the grant subject carried by the
+    // access token. With auth off there is no grant to key on, so local
+    // development gets one fixed subject rather than losing its history between
+    // calls — a substitution that is only reachable because /mcp is unguarded,
+    // which is itself local-only and already warned about below.
+    ...(options.auth.enabled ? {} : { identify: () => LOCAL_SUBJECT }),
     ...(options.scorer ? { scorer: options.scorer } : {}),
   });
 

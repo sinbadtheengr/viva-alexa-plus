@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { createApp } from "../src/app.js";
 import { AuthConfigError, loadAuthConfig, type AuthConfig } from "../src/auth/config.js";
 import { VivaOAuthProvider } from "../src/auth/provider.js";
+import { PASSCODE_SUBJECT } from "../src/auth/identity.js";
 import { AuthStore, sha256 } from "../src/auth/store.js";
 import { Corpus } from "../src/exam/corpus.js";
 import { silentLogger } from "../src/mcp/logging.js";
@@ -76,7 +77,7 @@ describe("F-9 · configuration fails closed", () => {
 describe("F-9 · token store", () => {
   it("never holds a token in the clear", () => {
     const store = new AuthStore();
-    const token = store.issueToken({ clientId: "c", scopes: [], resource: undefined, kind: "access" }, 60);
+    const token = store.issueToken({ clientId: "c", subject: PASSCODE_SUBJECT, scopes: [], resource: undefined, kind: "access" }, 60);
 
     const dump = JSON.stringify(store, (_k, v) => (v instanceof Map ? [...v.entries()] : v));
     expect(dump).not.toContain(token);
@@ -90,7 +91,14 @@ describe("F-9 · token store", () => {
   it("makes an authorization code single use", () => {
     const store = new AuthStore();
     const code = store.issueCode(
-      { clientId: "c", redirectUri: REDIRECT_URI, codeChallenge: "x", scopes: [], resource: undefined },
+      {
+        clientId: "c",
+        subject: PASSCODE_SUBJECT,
+        redirectUri: REDIRECT_URI,
+        codeChallenge: "x",
+        scopes: [],
+        resource: undefined,
+      },
       60,
     );
 
@@ -101,7 +109,7 @@ describe("F-9 · token store", () => {
   it("expires codes and tokens on the clock", () => {
     const clock = fakeClock();
     const store = new AuthStore(clock.now);
-    const token = store.issueToken({ clientId: "c", scopes: [], resource: undefined, kind: "access" }, 60);
+    const token = store.issueToken({ clientId: "c", subject: PASSCODE_SUBJECT, scopes: [], resource: undefined, kind: "access" }, 60);
 
     clock.advanceSeconds(61);
 
@@ -111,9 +119,16 @@ describe("F-9 · token store", () => {
   it("sweeps expired entries", () => {
     const clock = fakeClock();
     const store = new AuthStore(clock.now);
-    store.issueToken({ clientId: "c", scopes: [], resource: undefined, kind: "access" }, 60);
+    store.issueToken({ clientId: "c", subject: PASSCODE_SUBJECT, scopes: [], resource: undefined, kind: "access" }, 60);
     store.issueCode(
-      { clientId: "c", redirectUri: REDIRECT_URI, codeChallenge: "x", scopes: [], resource: undefined },
+      {
+        clientId: "c",
+        subject: PASSCODE_SUBJECT,
+        redirectUri: REDIRECT_URI,
+        codeChallenge: "x",
+        scopes: [],
+        resource: undefined,
+      },
       60,
     );
     clock.advanceSeconds(61);
@@ -169,6 +184,7 @@ describe("F-9 · provider", () => {
     const code = p.store.issueCode(
       {
         clientId: CLIENT_ID,
+        subject: PASSCODE_SUBJECT,
         redirectUri: REDIRECT_URI,
         codeChallenge: "abc",
         scopes: ["exam"],
@@ -188,6 +204,7 @@ describe("F-9 · provider", () => {
     const code = p.store.issueCode(
       {
         clientId: CLIENT_ID,
+        subject: PASSCODE_SUBJECT,
         redirectUri: REDIRECT_URI,
         codeChallenge: "abc",
         scopes: [],
@@ -209,6 +226,7 @@ describe("F-9 · provider", () => {
     const code = p.store.issueCode(
       {
         clientId: "someone-else",
+        subject: PASSCODE_SUBJECT,
         redirectUri: REDIRECT_URI,
         codeChallenge: "abc",
         scopes: [],
@@ -226,6 +244,7 @@ describe("F-9 · provider", () => {
     const code = p.store.issueCode(
       {
         clientId: CLIENT_ID,
+        subject: PASSCODE_SUBJECT,
         redirectUri: REDIRECT_URI,
         codeChallenge: "abc",
         scopes: [],
@@ -243,6 +262,7 @@ describe("F-9 · provider", () => {
     const code = p.store.issueCode(
       {
         clientId: CLIENT_ID,
+        subject: PASSCODE_SUBJECT,
         redirectUri: REDIRECT_URI,
         codeChallenge: "abc",
         scopes: ["exam"],
@@ -269,6 +289,7 @@ describe("F-9 · provider", () => {
     const code = p.store.issueCode(
       {
         clientId: CLIENT_ID,
+        subject: PASSCODE_SUBJECT,
         redirectUri: REDIRECT_URI,
         codeChallenge: "abc",
         scopes: [],
@@ -290,7 +311,13 @@ describe("F-9 · provider", () => {
   it("rotates refresh tokens and kills the presented one", async () => {
     const p = provider();
     const first = p.store.issueToken(
-      { clientId: CLIENT_ID, scopes: ["exam"], resource: config.resourceUrl.href, kind: "refresh" },
+      {
+        clientId: CLIENT_ID,
+        subject: PASSCODE_SUBJECT,
+        scopes: ["exam"],
+        resource: config.resourceUrl.href,
+        kind: "refresh",
+      },
       600,
     );
 
@@ -299,10 +326,63 @@ describe("F-9 · provider", () => {
     await expect(p.exchangeRefreshToken(client, first)).rejects.toThrow(/invalid or expired/);
   });
 
+  it("carries the grant subject onto the access token it verifies (F-7)", async () => {
+    const p = provider();
+    const code = p.store.issueCode(
+      {
+        clientId: CLIENT_ID,
+        subject: PASSCODE_SUBJECT,
+        redirectUri: REDIRECT_URI,
+        codeChallenge: "abc",
+        scopes: ["exam"],
+        resource: config.resourceUrl.href,
+      },
+      60,
+    );
+    const tokens = await p.exchangeAuthorizationCode(
+      client,
+      code,
+      undefined,
+      REDIRECT_URI,
+      config.resourceUrl,
+    );
+
+    const info = await p.verifyAccessToken(tokens.access_token);
+    expect(info.extra?.["subject"]).toBe(PASSCODE_SUBJECT);
+  });
+
+  it("keeps the subject across refresh rotation, so a history survives a refresh", async () => {
+    const p = provider();
+    const first = p.store.issueToken(
+      {
+        clientId: CLIENT_ID,
+        subject: PASSCODE_SUBJECT,
+        scopes: ["exam"],
+        resource: config.resourceUrl.href,
+        kind: "refresh",
+      },
+      600,
+    );
+
+    const rotated = await p.exchangeRefreshToken(client, first);
+    const info = await p.verifyAccessToken(rotated.access_token);
+
+    // The token is new; the identity behind it is not. Progress keyed on the
+    // subject therefore outlives every rotation.
+    expect(rotated.access_token).not.toBe(first);
+    expect(info.extra?.["subject"]).toBe(PASSCODE_SUBJECT);
+  });
+
   it("refuses to widen scope on refresh", async () => {
     const p = provider();
     const refresh = p.store.issueToken(
-      { clientId: CLIENT_ID, scopes: ["exam"], resource: config.resourceUrl.href, kind: "refresh" },
+      {
+        clientId: CLIENT_ID,
+        subject: PASSCODE_SUBJECT,
+        scopes: ["exam"],
+        resource: config.resourceUrl.href,
+        kind: "refresh",
+      },
       600,
     );
     await expect(p.exchangeRefreshToken(client, refresh, ["exam", "admin"])).rejects.toThrow(
@@ -320,7 +400,11 @@ afterEach(async () => {
   await Promise.all(servers.splice(0).map((s) => new Promise((r) => s.close(r))));
 });
 
-async function startServer(): Promise<{ origin: string; config: AuthConfig }> {
+async function startServer(): Promise<{
+  origin: string;
+  config: AuthConfig;
+  provider: VivaOAuthProvider;
+}> {
   const corpus = Corpus.fromItems([item(), unpreppedItem()]);
   // Bind first so the issuer and resource URLs carry the real port.
   const placeholder = await createApp({
@@ -340,7 +424,7 @@ async function startServer(): Promise<{ origin: string; config: AuthConfig }> {
   const server = built.app.listen(port, "127.0.0.1");
   await new Promise((r) => server.once("listening", r));
   servers.push(server);
-  return { origin, config };
+  return { origin, config, provider: built.provider! };
 }
 
 describe("F-9 · end to end against a live server", () => {
@@ -501,7 +585,57 @@ describe("F-9 · end to end against a live server", () => {
 
     await client.close();
   });
+
+  it("carries the candidate's identity all the way into a tool call (F-7)", async () => {
+    const { origin, config, provider } = await startServer();
+
+    const first = await accessTokenFor(origin, config);
+    const second = await accessTokenFor(origin, config);
+
+    // Two separate authorizations by the same person — a second device, or a
+    // re-pairing after a token lapsed. Both must resolve to the same subject,
+    // or every re-pairing would orphan the history already earned.
+    const a = await provider.verifyAccessToken(first);
+    const b = await provider.verifyAccessToken(second);
+    expect(a.extra?.["subject"]).toBe(PASSCODE_SUBJECT);
+    expect(b.extra?.["subject"]).toBe(a.extra?.["subject"]);
+
+    // And the subject survives the trip through requireBearerAuth and the
+    // transport: the tool knows whose history it is being asked about.
+    const transport = new StreamableHTTPClientTransport(new URL(`${origin}/mcp`), {
+      requestInit: { headers: { authorization: `Bearer ${first}` } },
+    });
+    const client = new Client({ name: "identity-test", version: "0" });
+    await client.connect(transport);
+
+    const result = (await client.callTool({ name: "get_progress", arguments: {} })) as {
+      structuredContent?: Record<string, unknown>;
+    };
+    expect(result.structuredContent?.["status"]).toBe("ok");
+    expect(result.structuredContent?.["sessionCount"]).toBe(0);
+
+    await client.close();
+  });
 });
+
+/** Runs the full flow and returns an access token. */
+async function accessTokenFor(origin: string, config: AuthConfig): Promise<string> {
+  const fresh = await freshCode(origin, config);
+  const res = await fetch(`${origin}/token`, {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "authorization_code",
+      client_id: CLIENT_ID,
+      code: fresh.code,
+      code_verifier: fresh.verifier,
+      redirect_uri: REDIRECT_URI,
+      resource: config.resourceUrl.href,
+    }),
+  });
+  const tokens = (await res.json()) as { access_token: string };
+  return tokens.access_token;
+}
 
 /** Walks authorize → consent again to get a usable code. */
 async function freshCode(
