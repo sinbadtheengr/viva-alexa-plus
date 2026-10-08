@@ -13,6 +13,7 @@ import { VivaOAuthProvider } from "./auth/provider.js";
 import type { Corpus } from "./exam/corpus.js";
 import type { ProgressStore } from "./grading/progress.js";
 import type { Scorer } from "./grading/types.js";
+import type { ProbeCoordinator } from "./probes/probes.js";
 import { createLogger, type Logger } from "./mcp/logging.js";
 import { buildServer, SERVER_VERSION } from "./mcp/server.js";
 
@@ -32,6 +33,8 @@ export interface AppOptions {
   readonly scorer?: Scorer;
   /** F-7 progress store. Defaults to in-memory. */
   readonly progress?: ProgressStore;
+  /** F-5 follow-up probes. Defaults to seeds only. */
+  readonly probes?: ProbeCoordinator;
 }
 
 export interface BuiltApp {
@@ -53,6 +56,7 @@ export async function createApp(options: AppOptions): Promise<BuiltApp> {
     ...(options.auth.enabled ? {} : { identify: () => LOCAL_SUBJECT }),
     ...(options.scorer ? { scorer: options.scorer } : {}),
     ...(options.progress ? { progress: options.progress } : {}),
+    ...(options.probes ? { probes: options.probes } : {}),
   });
 
   const transport = new StreamableHTTPServerTransport({

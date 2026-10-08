@@ -235,3 +235,22 @@ grading code would port to the first-party API by swapping one constructor.
 **Resolved 2026-09-11.** Swapped, and the stack line in CLAUDE.md updated.
 `@aws-sdk/client-bedrock-runtime` removed from the dependency tree.
 
+
+---
+
+## GAP-014 · S3 · OPEN · F-5's probe is one turn stale when it is finally asked
+
+F-5 fires the Bedrock call on each `submit_response` and says the probe replaces the seed
+"on the next turn" if it has arrived. But the reply to turn N must return immediately
+(hard rule 3), so the probe grounded in answer N can only be asked in reply to answer N+1.
+By then the candidate has said something newer, and a question that quotes answer N may
+sound like it ignored their last words.
+
+Implemented literally (probe from turn N replaces the seed returned for turn N+1, discarded
+if not arrived, never used two turns late). Options if it feels wrong in a live run:
+(a) accept it; (b) have the prompt ground only in the earliest-stated theme, not details;
+(c) feed the model the last two answers and ask it to bridge. All need a product call.
+
+Also unspecified: the probe replaces seed *wording* only; the seed count still decides when
+the exam ends (`exhausted`). Generated probes never extend an exam. Added
+`followUpSource: "seed" | "generated"` to `submit_response` structuredContent (additive).

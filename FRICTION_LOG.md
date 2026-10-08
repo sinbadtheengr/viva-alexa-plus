@@ -141,3 +141,23 @@ after any successful login, when the first access token expired.
 token is invalid or expired" - or narrowing the throws in the interface's documentation.
 *Status:* second upstream contribution candidate, alongside FRICTION-005.
 
+---
+
+## FRICTION-008 · "Non-blocking, replaces on the next turn" does not say what it replaces
+
+F-5 reads cleanly until you try to write the turn-taking test: a probe fired by answer N can
+only be asked in reply to answer N+1 (the reply to N already returned a seed), so the probe is
+always about the previous answer. Nothing in the spec says whether that is intended, whether a
+probe may extend the exam past its seeds, or how a caller can tell a generated question from a
+seed. Chose the literal reading and logged GAP-014 rather than deciding.
+
+*Cost:* ~15 minutes of design thought; no code churn.
+*What would have helped:* one sentence on staleness, and on whether seeds or probes own the
+exam length.
+
+## FRICTION-009 · `output_config.effort` on a plain `messages.create` is unverified
+
+The rubric adapter uses `effort` with `messages.parse`; the probe adapter uses it with plain
+`messages.create` at `"low"`, assuming the Mantle surface accepts it there too. No credentials
+were available to try it, so this is the first line to check on a live run.
+

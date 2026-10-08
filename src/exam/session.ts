@@ -3,6 +3,7 @@ import { SESSION_IDLE_MS } from "../config.js";
 import { PhaseViolationError, UnknownSessionError } from "./errors.js";
 import type { Action, Phase } from "./phases.js";
 import { isLegal } from "./phases.js";
+import type { FollowUpSource, ProbeSlot } from "../probes/probes.js";
 import type { Exam, ExamItem, Part } from "./schema.js";
 
 /**
@@ -38,6 +39,8 @@ export interface Session {
    * Scored as evidence under Fluency & Coherence by F-6, never punished here.
    */
   overrunSeconds: number;
+  /** F-5 - a generated probe in flight or waiting for the next turn. */
+  probe: ProbeSlot | null;
   scoringHandle: string | null;
   lastTouchedAt: number;
 }
@@ -74,6 +77,8 @@ export interface SubmitResult {
   readonly phase: Phase;
   /** The next probe, or null once the seeds are exhausted. */
   readonly followUp: string | null;
+  /** F-5 - whether `followUp` is a corpus seed or a generated probe; null when exhausted. */
+  readonly followUpSource: FollowUpSource | null;
   /** True when no probes remain and the caller should move to scoring. */
   readonly exhausted: boolean;
   /** True when this turn arrived late. The turn is still accepted in full. */
@@ -121,6 +126,7 @@ export class SessionStore {
       turns: [{ role: "examiner", text: item.prompt, at, overrun: false }],
       followUpIndex: 0,
       overrunSeconds: 0,
+      probe: null,
       scoringHandle: null,
       lastTouchedAt: at,
     };
@@ -182,14 +188,18 @@ export class SessionStore {
    * Records the candidate's turn and returns the next probe.
    *
    * The probe comes from `followUpSeeds` so this call never waits on a model
-   * (hard rule 3); F-5 swaps in a Bedrock-generated probe on a later turn only
-   * if one has already arrived.
+   * (hard rule 3); `takeProbe` (F-5) is a synchronous peek at a probe that has
+   * already arrived and validated. It must never await anything.
    *
    * A late turn is accepted in full and marked `overrun` (GAP-008, option 2).
    * Never reject a turn and never truncate one — running long is scored by F-6
    * as evidence under Fluency & Coherence, not enforced here.
    */
-  submitResponse(id: string, transcript: string): SubmitResult {
+  submitResponse(
+    id: string,
+    transcript: string,
+    takeProbe?: (session: Session) => string | null,
+  ): SubmitResult {
     const session = this.#require(id, "submit_response");
     const item = this.#item(session);
     const at = this.#now();
@@ -201,7 +211,13 @@ export class SessionStore {
 
     session.turns.push({ role: "candidate", text: transcript, at, overrun });
 
-    const followUp = item.followUpSeeds[session.followUpIndex] ?? null;
+    // The seeds fix how many questions the exam has; a generated probe only
+    // replaces the wording (F-5), and is consulted only while a seed remains.
+    const seed = item.followUpSeeds[session.followUpIndex] ?? null;
+    const generated = seed === null ? null : (takeProbe?.(session) ?? null);
+    const followUp = generated ?? seed;
+    const followUpSource: FollowUpSource | null =
+      followUp === null ? null : generated !== null ? "generated" : "seed";
     if (followUp !== null) {
       session.followUpIndex += 1;
       session.turns.push({ role: "examiner", text: followUp, at, overrun: false });
@@ -215,6 +231,7 @@ export class SessionStore {
       session,
       phase: session.phase,
       followUp,
+      followUpSource,
       exhausted: followUp === null,
       overrun,
       overrunSeconds: lateBy,
