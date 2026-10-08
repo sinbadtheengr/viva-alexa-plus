@@ -134,7 +134,6 @@ npm run build && npm start
 Use Chrome or Edge for speech recognition. Override with `VIVA_DEMO_CLIENT_ID`,
 `VIVA_DEMO_REDIRECT_URI`, `VIVA_DEMO_SCOPE`; `VIVA_DEMO_UI=0` turns it off. The server
 allows one MCP session per process (GAP-015): restart it if a second client cannot initialise.
-On the consent screen click Authorize rather than pressing Enter (GAP-016).
 
 ## License
 

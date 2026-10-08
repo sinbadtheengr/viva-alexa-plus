@@ -66,11 +66,12 @@ function page(options: {
   label { display:block; font-size:.85rem; margin-bottom:.35rem; }
   input { width:100%; padding:.6rem; font-size:1rem; border:1px solid #ccc;
           border-radius:6px; box-sizing:border-box; background:canvas; color:inherit; }
-  .row { display:flex; gap:.5rem; margin-top:1.25rem; }
-  button { flex:1; padding:.6rem; font-size:.95rem; border-radius:6px; cursor:pointer;
-           border:1px solid transparent; }
-  button.primary { background:#1a6ef5; color:#fff; }
-  button.secondary { background:transparent; border-color:#ccc; color:inherit; }
+  .row { display:flex; flex-direction:column; gap:.75rem; margin-top:1.25rem; }
+  button { width:100%; min-height:3.5rem; padding:.75rem; font-size:1.25rem; font-weight:600;
+           border-radius:8px; cursor:pointer; border:2px solid transparent; }
+  button.primary { background:#0b57d0; color:#fff; }
+  button.secondary { background:transparent; border-color:#555; color:inherit; }
+  button:focus-visible, input:focus-visible { outline:4px solid #f5a623; outline-offset:2px; }
   .error { color:#c0392b; font-size:.85rem; margin:0 0 1rem; }
 </style></head><body><main>
 <h1>Authorize ${escapeHtml(options.clientName)}</h1>
@@ -82,9 +83,12 @@ ${error}
   <label for="passcode">Passcode</label>
   <input id="passcode" name="passcode" type="password" autocomplete="current-password"
          autofocus required>
+  <!-- GAP-016: the first submit button is the form's default, so pressing Enter in the
+       passcode field activates it. Authorize must stay first in DOM order; Cancel follows.
+       Stacked, not reordered with CSS, so visual and tab order agree. -->
   <div class="row">
-    <button class="secondary" type="submit" name="action" value="deny">Cancel</button>
     <button class="primary" type="submit" name="action" value="approve">Authorize</button>
+    <button class="secondary" type="submit" name="action" value="deny">Cancel</button>
   </div>
 </form>
 </main></body></html>`;
