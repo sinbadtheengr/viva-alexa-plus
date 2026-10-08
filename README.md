@@ -89,6 +89,27 @@ npm start
 The server refuses to start with auth enabled and no passcode. `VIVA_AUTH_DISABLED=1`
 turns auth off for local development only.
 
+## Demo client (the Alexa+ stand-in)
+
+The Alexa+ add-on toolchain is closed to participants (GAP-001/006), so a browser app plays
+the Alexa+ role for the demo. It signs in with OAuth 2.1 + PKCE (S256, RFC 8707 `resource`),
+calls the seven tools over Streamable HTTP, reads each tool's text aloud with
+`speechSynthesis`, listens with the Web Speech API (a typed box appears where it is
+unsupported or the mic is blocked), and logs the browser-side round trip of every call.
+Countdowns come from `get_status`; the client never supplies a deadline.
+
+```bash
+export VIVA_DEMO_PASSCODE='pick-something'
+export VIVA_OAUTH_CLIENTS='[{"client_id":"viva-demo","client_name":"Viva Demo","redirect_uris":["http://127.0.0.1:8787/demo/"]}]'
+npm run build && npm start
+# open http://127.0.0.1:8787/demo/  (use the issuer's host, so the redirect stays same-origin)
+```
+
+Use Chrome or Edge for speech recognition. Override with `VIVA_DEMO_CLIENT_ID`,
+`VIVA_DEMO_REDIRECT_URI`, `VIVA_DEMO_SCOPE`; `VIVA_DEMO_UI=0` turns it off. The server
+allows one MCP session per process (GAP-014): restart it if a second client cannot initialise.
+On the consent screen click Authorize rather than pressing Enter (GAP-015).
+
 ## License
 
 MIT — see [LICENSE](LICENSE).

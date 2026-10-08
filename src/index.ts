@@ -5,6 +5,7 @@ import { Corpus } from "./exam/corpus.js";
 import { createScorer, loadScorerConfig } from "./grading/config.js";
 import { createLogger } from "./mcp/logging.js";
 import { SERVER_VERSION } from "./mcp/server.js";
+import { loadDemoConfig } from "./ui/demo.js";
 
 /**
  * Entrypoint. Everything interesting lives in `createApp` (F-1 + F-9) — this
@@ -33,7 +34,14 @@ async function main(): Promise<void> {
       : { note: "Set VIVA_BEDROCK_REGION to enable rubric scoring (F-6)." }),
   });
 
-  const { app, provider, close } = await createApp({ corpus, auth, logger, scorer });
+  const demo = loadDemoConfig(auth);
+  const { app, provider, close } = await createApp({
+    corpus,
+    auth,
+    logger,
+    scorer,
+    ...(demo ? { demo } : {}),
+  });
 
   if (provider) {
     // Expired codes and tokens should not accumulate for the life of the process.

@@ -14,6 +14,7 @@ import type { Corpus } from "./exam/corpus.js";
 import type { Scorer } from "./grading/types.js";
 import { createLogger, type Logger } from "./mcp/logging.js";
 import { buildServer, SERVER_VERSION } from "./mcp/server.js";
+import { demoRouter, type DemoConfig } from "./ui/demo.js";
 
 /**
  * F-1 + F-9 · The HTTP application.
@@ -29,6 +30,8 @@ export interface AppOptions {
   readonly logger?: Logger;
   /** F-6 grader. Defaults to the honest "no grader connected" stand-in. */
   readonly scorer?: Scorer;
+  /** Serve the browser demo client (the Alexa+ stand-in) under /demo. Omit to leave it off. */
+  readonly demo?: DemoConfig;
 }
 
 export interface BuiltApp {
@@ -114,6 +117,11 @@ export async function createApp(options: AppOptions): Promise<BuiltApp> {
       message:
         "VIVA_AUTH_DISABLED=1 — /mcp is unauthenticated. Local development only; never expose this.",
     });
+  }
+
+  if (options.demo) {
+    app.use(demoRouter(options.demo, options.auth, options.corpus));
+    logger.log({ event: "demo_ui", path: "/demo/", clientId: options.demo.clientId });
   }
 
   app.all("/mcp", ...guards, (req, res) => {
