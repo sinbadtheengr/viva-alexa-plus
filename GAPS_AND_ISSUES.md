@@ -255,7 +255,21 @@ Also unspecified: the probe replaces seed *wording* only; the seed count still d
 the exam ends (`exhausted`). Generated probes never extend an exam. Added
 `followUpSource: "seed" | "generated"` to `submit_response` structuredContent (additive).
 
-## GAP-015 · S2 · OPEN · The server accepts one MCP session per process
+## GAP-015 · S2 · CLOSED · The server accepts one MCP session per process
+
+**Resolution:** `createApp` now keeps a map of MCP connections keyed by `Mcp-Session-Id`, each a
+`StreamableHTTPServerTransport` + `McpServer` pair. A lone `initialize` POST always creates a new
+pair (a stale session id on it is ignored, so a reload works); other requests route by header;
+unknown id -> 404, missing id -> 400, DELETE closes and removes. Exam sessions, progress, scorer and
+probes are built once in `createApp` and shared by every pair, so an exam outlives the MCP connection
+that started it. Auth guards run first and unchanged; `req.auth` reaches each tool call per request.
+Connections are swept when idle (`VIVA_MCP_SESSION_IDLE_MS`, default 30 min; unref'd interval) and
+capped (`VIVA_MCP_SESSION_MAX`, default 100, least-recently-used evicted). Tests: `tests/mcp-sessions.test.ts`.
+Not done: a connection is not bound to the subject that opened it (a different valid token holding
+a leaked session id could use it). Ids are random UUIDs and the bearer check still applies.
+
+*Original report follows.*
+
 
 Found while building the demo client (A2). `createApp` connects a single
 `StreamableHTTPServerTransport` with a session-id generator, and that transport allows exactly

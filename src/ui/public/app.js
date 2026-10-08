@@ -151,9 +151,7 @@ async function ensureMcpSession() {
   const id = state.nextId++;
   const { res, text, messages } = await post(L.initializeRequest(id, { name: "viva-demo-client", version: "0.1.0" }), { expectResponse: true });
   if (!res.ok) {
-    // The server owns exactly one MCP session per process (GAP-015).
-    throw new Error(`MCP initialize failed (HTTP ${res.status}): ${text.slice(0, 200)}. ` +
-      "The server accepts one MCP session per process; restart it if another client initialised first.");
+    throw new Error(`MCP initialize failed (HTTP ${res.status}): ${text.slice(0, 200)}.`);
   }
   L.responseFor(messages, id);
   state.mcpSession = res.headers.get("mcp-session-id");
