@@ -193,3 +193,18 @@ Two surprises when writing an MCP *client* against our own server:
 
 *Cost:* ~30 minutes, mostly the second. *What would have helped:* a note in the SDK server
 docs that one transport instance serves one session, with the per-session pattern shown.
+
+## FRICTION-012 · `registerAppResource` does not type-check against the SDK it is built for
+
+`@modelcontextprotocol/ext-apps` 2.0.0's `registerAppResource` takes `McpUiAppResourceConfig`,
+which extends the SDK's `ResourceMetadata`. With `@modelcontextprotocol/sdk` 1.30.0 installed,
+passing the SDK's own documented `title` or `description` is rejected with "does not exist in
+type" - two errors in a row, each naming a field `ResourceMetadata` plainly has. I stopped
+fighting it and called `server.registerResource` directly with the exported
+`RESOURCE_MIME_TYPE`, which is all the helper adds. Also: the package ships no way to get a
+self-contained single-file view without a bundler (its `App` class needs bundling), so the
+views speak the small host protocol (`ui/initialize`, `ui/notifications/tool-result`) by hand
+in about 30 lines. The protocol types made that easy; a "no-bundler" note in the README would
+have saved the detour.
+
+*Cost:* ~20 minutes. *Status:* upstream issue candidate (the type mismatch).

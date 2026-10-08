@@ -284,3 +284,35 @@ demo client, which correctly reported "Sign-in was cancelled."
 *Fix (not made here, outside A2's scope):* put the primary Authorize button first in DOM order
 (style it last) or add a hidden default submit with `value="approve"`. Needs a test in
 `tests/auth.test.ts`.
+
+
+---
+
+## GAP-017 · S3 · OPEN · F-8 "minimal level indicator" needs the microphone, and Alexa+ hosts are unverified
+
+F-8 asks the Speaking view for "a minimal level indicator". The server receives a
+transcript, never audio (GAP-004), so the only honest level meter is one the *view* draws
+from the device microphone, locally. Implemented that way: the speaking resource declares
+`_meta.ui.permissions.microphone`, the view feature-detects `getUserMedia`, analyses the
+signal on-device and shows nothing if access is refused. It never draws a fake or
+time-driven meter, records nothing, and sends nothing. Nothing in the meter is scored.
+
+Product calls this does not make for you:
+(a) whether an Echo Show host will grant a page its microphone at all while Alexa+ is
+listening on the same hardware (unknown; no host available here), and whether a permission
+prompt mid-exam is acceptable; if not, drop the `permissions` declaration and the meter
+disappears, leaving the elapsed-time bar as the only speaking indicator;
+(b) whether the view should show anything when there is no meter (currently it shows none).
+
+Also recorded, not decided: one tool can return two kinds of payload (`advance_phase` gives
+a cue card during preparation and a speaking clock afterwards), but the standard links one
+resource per tool. All three documents therefore share one script and pick the layout from
+`structuredContent.view`, with the linked resource only supplying the default. Tool-to-view
+links: `start_exam` and `advance_phase` -> cue card, `get_status` and `submit_response` ->
+speaking, `get_results` -> results. `score_session` and `get_progress` have no view.
+
+Additive `structuredContent` fields added for the clock: `phaseDeadline` (epoch ms or null),
+`serverNow` and `phaseSeconds` on `start_exam`, `get_status` and `advance_phase`; and the
+prompt, bullets, exam, part, locale, topic, `prepSeconds` and `speakSeconds` on
+`advance_phase` so the cue card keeps its content. A view counts down from
+`phaseDeadline - serverNow` minus its own elapsed time, never from its wall clock.
