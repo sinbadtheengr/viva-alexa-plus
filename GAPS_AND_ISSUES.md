@@ -254,3 +254,33 @@ if not arrived, never used two turns late). Options if it feels wrong in a live 
 Also unspecified: the probe replaces seed *wording* only; the seed count still decides when
 the exam ends (`exhausted`). Generated probes never extend an exam. Added
 `followUpSource: "seed" | "generated"` to `submit_response` structuredContent (additive).
+
+## GAP-015 · S2 · OPEN · The server accepts one MCP session per process
+
+Found while building the demo client (A2). `createApp` connects a single
+`StreamableHTTPServerTransport` with a session-id generator, and that transport allows exactly
+one `initialize` for its lifetime. Verified live: after one client initialises, any second
+`initialize` (a page reload, a second browser tab, a reconnecting Alexa+) is answered
+`400 Invalid Request: Server already initialized`, and the only cure is restarting the server.
+
+This matters beyond the demo: Alexa+ will open a new MCP session per conversation or per
+device, so the first conversation after deployment would work and the next would not.
+
+*Mitigation in the demo client:* it remembers its `Mcp-Session-Id` in `sessionStorage`, so a
+reload in the same tab reuses it, and it reports the 400 plainly when it cannot.
+*Decision needed (not taken here):* per-session transports (a transport and `McpServer`
+per `initialize`, sharing the session/progress stores), or stateless mode. That changes
+`src/app.ts` and the F-1 spec, so it is registered rather than decided.
+
+---
+
+## GAP-016 · S3 · OPEN · Pressing Enter on the consent screen denies the request
+
+`src/auth/consent.ts` renders Cancel before Authorize inside one form, so the form's default
+button is Cancel. Typing the passcode and pressing Enter - the natural thing to do - submits
+`action=deny` and redirects to the client with `error=access_denied`. Verified live in the
+demo client, which correctly reported "Sign-in was cancelled."
+
+*Fix (not made here, outside A2's scope):* put the primary Authorize button first in DOM order
+(style it last) or add a hidden default submit with `value="approve"`. Needs a test in
+`tests/auth.test.ts`.

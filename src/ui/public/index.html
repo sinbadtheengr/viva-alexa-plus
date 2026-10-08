@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Viva demo client</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Viva <span class="sub">demo client &middot; plays the Alexa+ role</span></h1>
+  <div class="toolbar">
+    <span id="conn" class="pill" role="status">Not connected</span>
+    <label class="check"><input type="checkbox" id="voiceOut" checked> Speak aloud</label>
+  </div>
+</header>
+
+<main>
+  <div id="banner" class="banner" role="alert" hidden></div>
+
+  <!-- 1. Connect -->
+  <section id="viewConnect" class="card">
+    <h2>Connect</h2>
+    <p>This page stands in for Alexa+. It signs in with OAuth 2.1 and PKCE, then calls the exam tools over MCP.
+       Your passcode is typed on the server's own consent screen, never here.</p>
+    <button id="btnConnect" class="primary">Sign in with Viva</button>
+  </section>
+
+  <!-- 2. Choose an exam -->
+  <section id="viewSetup" class="card" hidden>
+    <h2>Start an exam</h2>
+    <div class="grid">
+      <label>Exam and language
+        <select id="selExam"></select>
+      </label>
+      <label>Part
+        <select id="selPart"></select>
+      </label>
+      <label>Topic
+        <select id="selTopic"></select>
+      </label>
+    </div>
+    <button id="btnStart" class="primary">Start exam</button>
+    <button id="btnProgress" class="secondary">Show my progress</button>
+    <p id="progressText" class="note" hidden></p>
+  </section>
+
+  <!-- 3. Cue card / speaking -->
+  <section id="viewExam" class="card" hidden>
+    <div class="phaseRow">
+      <span id="phaseName" class="pill">briefing</span>
+      <span id="examMeta" class="meta"></span>
+    </div>
+
+    <div id="cue">
+      <h2 id="cueTitle">Examiner</h2>
+      <p id="cuePrompt" class="prompt"></p>
+      <ul id="cueBullets" class="bullets"></ul>
+    </div>
+
+    <div class="clockRow">
+      <div class="clockBox">
+        <div id="clockLabel" class="clockLabel">Time</div>
+        <div id="clock" class="clock" role="timer" aria-live="off">--:--</div>
+      </div>
+      <div class="clockBox" id="elapsedBox" hidden>
+        <div class="clockLabel">Speaking for</div>
+        <div id="elapsed" class="clock">0:00</div>
+      </div>
+    </div>
+    <p id="overrunNote" class="note warn" hidden></p>
+
+    <div id="examiner" class="examiner" aria-live="polite"></div>
+
+    <div id="answerArea" hidden>
+      <h3>Your answer</h3>
+      <div id="liveTranscript" class="transcript" aria-live="polite">&nbsp;</div>
+      <div id="typedArea" hidden>
+        <label for="typed">Speech recognition is not available here (unsupported browser or no microphone access). Type your answer instead.</label>
+        <textarea id="typed" rows="4"></textarea>
+      </div>
+      <div class="row">
+        <button id="btnListen" class="secondary">Start listening</button>
+        <button id="btnSubmit" class="primary">Submit answer</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <button id="btnAdvance" class="primary" hidden>Start the clock</button>
+    </div>
+  </section>
+
+  <!-- 4. Results -->
+  <section id="viewResults" class="card" hidden>
+    <h2>Results</h2>
+    <p id="resultStatus" class="prompt" aria-live="polite"></p>
+    <div id="scores" class="scores"></div>
+    <p class="note">Pronunciation is not assessed. Viva receives a transcript, not audio.</p>
+    <button id="btnAgain" class="secondary" hidden>Start another exam</button>
+    <button id="btnRetry" class="secondary" hidden>Check again</button>
+  </section>
+
+  <section id="viewTurns" class="card" hidden>
+    <h2>Conversation (text)</h2>
+    <ol id="turns" class="turns"></ol>
+  </section>
+
+  <section class="card log">
+    <h2>Request log <span id="logSummary" class="meta"></span></h2>
+    <pre id="log" aria-label="Per-tool round-trip times">No requests yet.</pre>
+  </section>
+</main>
+<script type="module" src="app.js"></script>
+</body>
+</html>

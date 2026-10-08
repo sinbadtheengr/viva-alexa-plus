@@ -161,3 +161,35 @@ The rubric adapter uses `effort` with `messages.parse`; the probe adapter uses i
 `messages.create` at `"low"`, assuming the Mantle surface accepts it there too. No credentials
 were available to try it, so this is the first line to check on a live run.
 
+
+
+---
+
+## FRICTION-010 · No Alexa+ client to demo against, so the demo needs its own
+
+With the add-on toolchain closed to participants (GAP-001, GAP-006) there is nothing that
+plays Alexa+ for a demo video. I built a browser client (`/demo`) that performs the OAuth 2.1
++ PKCE flow and calls the seven tools over Streamable HTTP, speaking `content` with
+`speechSynthesis` and listening with `SpeechRecognition`. It is also the only way I have to
+measure the 500ms round trip from the caller's side.
+
+*Cost:* roughly a day that would have gone into the actual product. *Observed:* tool round
+trips of 3-16 ms on loopback, so the budget is dominated by whatever sits between Alexa+ and
+the server, not by the tools.
+*What would have helped:* a documented local test harness or simulator for Alexa+ MCP add-ons.
+
+---
+
+## FRICTION-011 · The SDK's Streamable HTTP transport answers in SSE, and only initialises once
+
+Two surprises when writing an MCP *client* against our own server:
+
+1. POST responses come back as `text/event-stream` even for one-shot calls, so a client that
+   assumes `application/json` fails on the first call. The spec allows either; a client must
+   parse both.
+2. A stateful transport accepts a single `initialize` for its whole life (see GAP-015). The
+   error is accurate but surfaces only on the second client, which is the one you meet after
+   a page reload.
+
+*Cost:* ~30 minutes, mostly the second. *What would have helped:* a note in the SDK server
+docs that one transport instance serves one session, with the per-session pattern shown.

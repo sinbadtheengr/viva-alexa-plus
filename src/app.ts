@@ -16,6 +16,7 @@ import type { Scorer } from "./grading/types.js";
 import type { ProbeCoordinator } from "./probes/probes.js";
 import { createLogger, type Logger } from "./mcp/logging.js";
 import { buildServer, SERVER_VERSION } from "./mcp/server.js";
+import { demoRouter, type DemoConfig } from "./ui/demo.js";
 
 /**
  * F-1 + F-9 · The HTTP application.
@@ -35,6 +36,8 @@ export interface AppOptions {
   readonly progress?: ProgressStore;
   /** F-5 follow-up probes. Defaults to seeds only. */
   readonly probes?: ProbeCoordinator;
+  /** Serve the browser demo client (the Alexa+ stand-in) under /demo. Omit to leave it off. */
+  readonly demo?: DemoConfig;
 }
 
 export interface BuiltApp {
@@ -122,6 +125,11 @@ export async function createApp(options: AppOptions): Promise<BuiltApp> {
       message:
         "VIVA_AUTH_DISABLED=1 — /mcp is unauthenticated. Local development only; never expose this.",
     });
+  }
+
+  if (options.demo) {
+    app.use(demoRouter(options.demo, options.auth, options.corpus));
+    logger.log({ event: "demo_ui", path: "/demo/", clientId: options.demo.clientId });
   }
 
   app.all("/mcp", ...guards, (req, res) => {

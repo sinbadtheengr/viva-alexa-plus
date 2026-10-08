@@ -9,6 +9,7 @@ import { createProbeGenerator, loadProbeConfig } from "./probes/bedrock.js";
 import { ProbeCoordinator } from "./probes/probes.js";
 import { createLogger } from "./mcp/logging.js";
 import { SERVER_VERSION } from "./mcp/server.js";
+import { loadDemoConfig } from "./ui/demo.js";
 
 /**
  * Entrypoint. Everything interesting lives in `createApp` (F-1 + F-9) — this
@@ -54,7 +55,16 @@ async function main(): Promise<void> {
     ...(probeConfig.enabled ? { region: probeConfig.region, model: probeConfig.model } : {}),
   });
 
-  const { app, provider, close } = await createApp({ corpus, auth, logger, scorer, progress, probes });
+  const demo = loadDemoConfig(auth);
+  const { app, provider, close } = await createApp({
+    corpus,
+    auth,
+    logger,
+    scorer,
+    progress,
+    probes,
+    ...(demo ? { demo } : {}),
+  });
 
   if (provider) {
     // Expired codes and tokens should not accumulate for the life of the process.
