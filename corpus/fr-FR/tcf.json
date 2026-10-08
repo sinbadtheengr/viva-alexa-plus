@@ -1,5 +1,5 @@
 {
-  "provenance": "Contenu original rédigé pour ce projet. Les consignes, les points de la fiche et les relances sont écrits de zéro. Aucun texte ne provient de France Éducation international ni d'aucune épreuve publiée ; seul le format public de l'épreuve (structure des tâches et minutage) est repris. Voir GAP-002.",
+  "provenance": "Contenu original rédigé pour ce projet, avec l'aide d'une IA (Claude). Les consignes, les points de la fiche et les relances sont écrits de zéro, sans copie ni adaptation proche d'aucune source. Aucun texte ne provient de France Éducation international ni d'aucune épreuve publiée ; seul le format public de l'épreuve (structure des tâches et minutage) est repris. Voir GAP-002.",
   "items": [
     {
       "id": "tcf.p1.quotidien.001",
@@ -14,6 +14,36 @@
         "Qu'est-ce qui vous plaît le plus dans une journée type ?",
         "Y a-t-il quelque chose que vous aimeriez changer ?",
         "Comment occupez-vous votre temps libre ?"
+      ]
+    },
+    {
+      "id": "tcf.p1.logement.001",
+      "exam": "tcf",
+      "locale": "fr-FR",
+      "part": 1,
+      "topic": "logement",
+      "prompt": "Parlez-moi de l'endroit où vous habitez : à quoi ressemble votre logement ?",
+      "prepSeconds": 0,
+      "speakSeconds": 120,
+      "followUpSeeds": [
+        "Qu'est-ce que vous appréciez le plus chez vous ?",
+        "Avec qui partagez-vous cet espace ?",
+        "Si vous pouviez le modifier, que changeriez-vous ?"
+      ]
+    },
+    {
+      "id": "tcf.p1.loisirs.001",
+      "exam": "tcf",
+      "locale": "fr-FR",
+      "part": 1,
+      "topic": "loisirs",
+      "prompt": "Que faites-vous d'habitude pendant votre temps libre le week-end ?",
+      "prepSeconds": 0,
+      "speakSeconds": 120,
+      "followUpSeeds": [
+        "Faites-vous ces activités seul ou avec d'autres personnes ?",
+        "Y a-t-il une activité que vous aimeriez essayer un jour ?",
+        "Comment passiez-vous vos week-ends quand vous étiez plus jeune ?"
       ]
     },
     {
@@ -38,6 +68,48 @@
       ]
     },
     {
+      "id": "tcf.p2.location.001",
+      "exam": "tcf",
+      "locale": "fr-FR",
+      "part": 2,
+      "topic": "location",
+      "prompt": "Vous cherchez un appartement à louer dans une ville que vous ne connaissez pas encore. Vous téléphonez à une agence immobilière pour obtenir des renseignements. Vous avez deux minutes de préparation.",
+      "bullets": [
+        "la taille et l'état du logement",
+        "le montant du loyer et des charges",
+        "la durée du contrat",
+        "et les modalités de visite"
+      ],
+      "prepSeconds": 120,
+      "speakSeconds": 330,
+      "followUpSeeds": [
+        "Que feriez-vous si le loyer dépassait votre budget ?",
+        "Quels documents seriez-vous prêt à fournir ?",
+        "Comment vous assureriez-vous que le quartier est calme ?"
+      ]
+    },
+    {
+      "id": "tcf.p2.formation.001",
+      "exam": "tcf",
+      "locale": "fr-FR",
+      "part": 2,
+      "topic": "formation",
+      "prompt": "Vous voulez suivre un cours de cuisine le soir. Vous vous adressez à l'organisme de formation pour vous renseigner. Vous avez deux minutes de préparation.",
+      "bullets": [
+        "le programme et la durée des séances",
+        "le prix du cours",
+        "le nombre de participants",
+        "et la possibilité de se faire rembourser en cas d'absence"
+      ],
+      "prepSeconds": 120,
+      "speakSeconds": 330,
+      "followUpSeeds": [
+        "Que répondriez-vous si le cours était déjà complet ?",
+        "Qu'attendez-vous exactement de cette formation ?",
+        "Comment vérifieriez-vous la qualité de l'enseignement ?"
+      ]
+    },
+    {
       "id": "tcf.p3.telephone.001",
       "exam": "tcf",
       "locale": "fr-FR",
@@ -50,6 +122,51 @@
         "Quels seraient les effets concrets d'une telle mesure ?",
         "Comment réagiraient les élèves, selon vous ?",
         "Existe-t-il une autre solution que l'interdiction ?"
+      ]
+    },
+    {
+      "id": "tcf.p3.teletravail.001",
+      "exam": "tcf",
+      "locale": "fr-FR",
+      "part": 3,
+      "topic": "teletravail",
+      "prompt": "Donnez votre point de vue sur le sujet suivant : le télétravail est-il une bonne chose pour les salariés ? Vous avez deux minutes de préparation.",
+      "prepSeconds": 120,
+      "speakSeconds": 270,
+      "followUpSeeds": [
+        "Quels sont les risques pour la vie personnelle ?",
+        "Quel impact cela a-t-il sur l'esprit d'équipe ?",
+        "Tous les métiers peuvent-ils s'y prêter ?"
+      ]
+    },
+    {
+      "id": "tcf.p3.transports.001",
+      "exam": "tcf",
+      "locale": "fr-FR",
+      "part": 3,
+      "topic": "transports",
+      "prompt": "Donnez votre opinion sur la question suivante : faut-il rendre les transports en commun gratuits dans les grandes villes ? Vous avez deux minutes de préparation.",
+      "prepSeconds": 120,
+      "speakSeconds": 270,
+      "followUpSeeds": [
+        "Qui paierait réellement cette mesure ?",
+        "Cela inciterait-il vraiment les gens à laisser leur voiture ?",
+        "Quelles autres mesures pourraient améliorer les déplacements ?"
+      ]
+    },
+    {
+      "id": "tcf.p3.reseaux.001",
+      "exam": "tcf",
+      "locale": "fr-FR",
+      "part": 3,
+      "topic": "reseaux",
+      "prompt": "Exprimez votre point de vue sur le sujet suivant : les réseaux sociaux rapprochent-ils vraiment les gens ? Vous avez deux minutes de préparation.",
+      "prepSeconds": 120,
+      "speakSeconds": 270,
+      "followUpSeeds": [
+        "Quels sont les effets sur les relations familiales ?",
+        "Y a-t-il un âge à partir duquel il faudrait les autoriser ?",
+        "Comment peut-on les utiliser de manière plus raisonnable ?"
       ]
     }
   ]
