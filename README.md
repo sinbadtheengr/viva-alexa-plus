@@ -117,8 +117,11 @@ from CLAUDE.md F-4.
 - Tool behaviour and error mapping; seed-first follow-ups; probes never block a turn.
 - Scoring honesty rules against a fake grader: out-of-scale levels rejected, one retry at
   `effort: "max"`, partial results never padded, model failure reported as `unavailable`.
-- OAuth 2.1 + PKCE, single-use codes, hashed tokens, refresh rotation, audience binding, 401
-  challenge, no DCR; consent screen behaviour.
+- OAuth 2.1 + PKCE, hashed tokens, refresh rotation, audience binding, 401 challenge, no DCR;
+  consent screen behaviour. Authorization codes are single use: a wrong `code_verifier` (or wrong
+  client, redirect URI or resource) burns the code, and presenting a code that was already
+  redeemed revokes the access and refresh tokens minted from it, including rotated descendants
+  (RFC 6749 section 4.1.2). Codes and token lineage are in memory only, so a restart forgets both.
 - Progress keyed on grant subject; unattributable sessions not recorded; file store atomic write
   and refusal to overwrite a corrupt file.
 - Multiple concurrent MCP sessions (GAP-015); MCP Apps resources and tool metadata.

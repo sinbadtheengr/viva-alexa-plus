@@ -665,3 +665,182 @@ async function freshCode(
   const code = new URL(approved.headers.get("location")!).searchParams.get("code")!;
   return { code, verifier };
 }
+
+// --------------------------------------------------------------------------
+// Authorization-code burning and replay revocation (QA S2)
+// --------------------------------------------------------------------------
+
+describe("F-9 · a failed or replayed code exchange kills the code", () => {
+  async function exchange(
+    origin: string,
+    config: AuthConfig,
+    code: string,
+    verifier: string,
+  ): Promise<Response> {
+    return fetch(`${origin}/token`, {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "authorization_code",
+        client_id: CLIENT_ID,
+        code,
+        code_verifier: verifier,
+        redirect_uri: REDIRECT_URI,
+        resource: config.resourceUrl.href,
+      }),
+    });
+  }
+
+  async function refresh(origin: string, config: AuthConfig, token: string): Promise<Response> {
+    return fetch(`${origin}/token`, {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "refresh_token",
+        client_id: CLIENT_ID,
+        refresh_token: token,
+        resource: config.resourceUrl.href,
+      }),
+    });
+  }
+
+  it("a wrong verifier is invalid_grant and the code is then dead, even with the right verifier", async () => {
+    const { origin, config } = await startServer();
+    const { code, verifier } = await freshCode(origin, config);
+
+    const bad = await exchange(origin, config, code, randomBytes(32).toString("base64url"));
+    expect(bad.status).toBe(400);
+    expect(((await bad.json()) as { error: string }).error).toBe("invalid_grant");
+
+    const good = await exchange(origin, config, code, verifier);
+    expect(good.status).toBe(400);
+    expect(((await good.json()) as { error: string }).error).toBe("invalid_grant");
+  });
+
+  it("still lets the correct flow through, with subject on the token and across refresh", async () => {
+    const { origin, config, provider } = await startServer();
+    const { code, verifier } = await freshCode(origin, config);
+
+    const res = await exchange(origin, config, code, verifier);
+    expect(res.status).toBe(200);
+    const tokens = (await res.json()) as { access_token: string; refresh_token: string };
+    expect((await provider.verifyAccessToken(tokens.access_token)).extra?.["subject"]).toBe(
+      PASSCODE_SUBJECT,
+    );
+
+    const rotated = await refresh(origin, config, tokens.refresh_token);
+    expect(rotated.status).toBe(200);
+    const next = (await rotated.json()) as { access_token: string };
+    const info = await provider.verifyAccessToken(next.access_token);
+    expect(info.extra?.["subject"]).toBe(PASSCODE_SUBJECT);
+    expect(info.resource?.href).toBe(config.resourceUrl.href);
+  });
+
+  it("replaying a redeemed code is invalid_grant and revokes the tokens it produced", async () => {
+    const { origin, config, provider } = await startServer();
+    const { code, verifier } = await freshCode(origin, config);
+
+    const tokens = (await (await exchange(origin, config, code, verifier)).json()) as {
+      access_token: string;
+      refresh_token: string;
+    };
+    await expect(provider.verifyAccessToken(tokens.access_token)).resolves.toBeTruthy();
+
+    const replay = await exchange(origin, config, code, verifier);
+    expect(replay.status).toBe(400);
+    expect(((await replay.json()) as { error: string }).error).toBe("invalid_grant");
+
+    await expect(provider.verifyAccessToken(tokens.access_token)).rejects.toThrow(/invalid or expired/);
+    const refreshed = await refresh(origin, config, tokens.refresh_token);
+    expect(refreshed.status).toBe(400);
+  });
+
+  it("replay also revokes tokens that descend from the code through a refresh", async () => {
+    const { origin, config, provider } = await startServer();
+    const { code, verifier } = await freshCode(origin, config);
+    const first = (await (await exchange(origin, config, code, verifier)).json()) as {
+      refresh_token: string;
+    };
+    const rotated = (await (await refresh(origin, config, first.refresh_token)).json()) as {
+      access_token: string;
+      refresh_token: string;
+    };
+
+    await exchange(origin, config, code, verifier);
+
+    await expect(provider.verifyAccessToken(rotated.access_token)).rejects.toThrow(/invalid or expired/);
+    expect((await refresh(origin, config, rotated.refresh_token)).status).toBe(400);
+  });
+
+  it("does not revoke other grants' tokens on a replay", async () => {
+    const { origin, config, provider } = await startServer();
+    const a = await freshCode(origin, config);
+    const b = await freshCode(origin, config);
+    await exchange(origin, config, a.code, a.verifier);
+    const bt = (await (await exchange(origin, config, b.code, b.verifier)).json()) as {
+      access_token: string;
+    };
+
+    await exchange(origin, config, a.code, a.verifier);
+
+    await expect(provider.verifyAccessToken(bt.access_token)).resolves.toBeTruthy();
+  });
+
+  it("an unknown code is a plain invalid_grant and touches nothing", async () => {
+    const { origin, config, provider } = await startServer();
+    const { code, verifier } = await freshCode(origin, config);
+    const tokens = (await (await exchange(origin, config, code, verifier)).json()) as {
+      access_token: string;
+    };
+
+    const res = await exchange(origin, config, "not-a-real-code", verifier);
+    expect(res.status).toBe(400);
+    expect(((await res.json()) as { error: string }).error).toBe("invalid_grant");
+    await expect(provider.verifyAccessToken(tokens.access_token)).resolves.toBeTruthy();
+  });
+
+  it("an expired code is invalid_grant", async () => {
+    const clock = fakeClock();
+    const config = configFor("https://viva.example.com");
+    const p = new VivaOAuthProvider(config, new AuthStore(clock.now));
+    const client = { client_id: CLIENT_ID, redirect_uris: [REDIRECT_URI] } as never;
+    const code = p.store.issueCode(
+      {
+        clientId: CLIENT_ID,
+        subject: PASSCODE_SUBJECT,
+        redirectUri: REDIRECT_URI,
+        codeChallenge: "abc",
+        scopes: [],
+        resource: config.resourceUrl.href,
+      },
+      60,
+    );
+    clock.advanceSeconds(61);
+
+    await expect(p.challengeForAuthorizationCode(client, code)).rejects.toThrow(/invalid or expired/);
+    await expect(
+      p.exchangeAuthorizationCode(client, code, undefined, REDIRECT_URI, config.resourceUrl),
+    ).rejects.toThrow(/invalid or expired/);
+  });
+
+  it("a challenge by the wrong client burns the code", async () => {
+    const config = configFor("https://viva.example.com");
+    const p = new VivaOAuthProvider(config);
+    const good = { client_id: CLIENT_ID, redirect_uris: [REDIRECT_URI] } as never;
+    const other = { client_id: "other", redirect_uris: [REDIRECT_URI] } as never;
+    const code = p.store.issueCode(
+      {
+        clientId: CLIENT_ID,
+        subject: PASSCODE_SUBJECT,
+        redirectUri: REDIRECT_URI,
+        codeChallenge: "abc",
+        scopes: [],
+        resource: config.resourceUrl.href,
+      },
+      60,
+    );
+
+    await expect(p.challengeForAuthorizationCode(other, code)).rejects.toThrow(/invalid or expired/);
+    await expect(p.challengeForAuthorizationCode(good, code)).rejects.toThrow(/invalid or expired/);
+  });
+});
