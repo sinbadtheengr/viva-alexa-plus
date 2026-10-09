@@ -38,7 +38,7 @@ Requires Node 22+ (developed on Node 24).
 
 ```bash
 npm install
-npm run build && npm test          # 261 tests
+npm run build && npm test          # 273 tests
 ```
 
 Run the server with the browser demo client (the Alexa+ stand-in, see below):
@@ -115,9 +115,9 @@ from CLAUDE.md F-4.
 
 ## What is verified, and what is not
 
-**Verified by code and tests** (`npm test`, 261 tests across 13 files):
+**Verified by code and tests** (`npm test`, 273 tests across 14 files):
 
-- Session state machine, overrun handling, corpus validation (including mandatory `provenance`).
+- Session state machine, overrun handling, corpus validation (including mandatory `provenance`, at least 20 characters after trimming).
 - Tool behaviour and error mapping; seed-first follow-ups; probes never block a turn.
 - Scoring honesty rules against a fake grader: out-of-scale levels rejected, one retry at
   `effort: "max"`, partial results never padded, model failure reported as `unavailable`.
@@ -205,7 +205,7 @@ Benchmark tuning: `BENCH_ITERATIONS` (200), `BENCH_WARMUP` (10), `BENCH_TURNS` (
 | `VIVA_SCORING_DISABLED` | unset | `1` forces the no-grader stand-in even with a region |
 | `VIVA_PROBES_DISABLED` | unset | `1` turns off generated follow-ups only |
 | `VIVA_PROGRESS_FILE` | unset | JSON file for progress history; unset = in memory |
-| `VIVA_CORPUS_ROOT` | `corpus` | Corpus directory |
+| `VIVA_CORPUS_ROOT` | `<repo root>/corpus` | Corpus directory. Absolute as-is; relative resolves against the working directory |
 | `VIVA_DEFAULT_LOCALE`, `VIVA_DEFAULT_EXAM` | `en-US`, `ielts` | Defaults when a caller omits them |
 | `VIVA_MCP_SESSION_IDLE_MS` | `1800000` | Idle MCP connections are reaped after this |
 | `VIVA_MCP_SESSION_MAX` | `100` | Cap on concurrent MCP connections (LRU evicted) |
