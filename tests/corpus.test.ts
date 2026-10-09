@@ -94,6 +94,22 @@ describe("F-2 · schema", () => {
     expect(result.success).toBe(false);
   });
 
+  it.each(["", "   ", "\n\t ", "x", "  original  "])(
+    "rejects an effectively undocumented provenance %j",
+    (provenance) => {
+      expect(corpusFileSchema.safeParse({ provenance, items: [item()] }).success).toBe(false);
+    },
+  );
+
+  it("accepts a real provenance statement, trimmed", () => {
+    const parsed = corpusFileSchema.safeParse({
+      provenance: "  Original content written for this project.  ",
+      items: [item()],
+    });
+    expect(parsed.success).toBe(true);
+    if (parsed.success) expect(parsed.data.provenance).toBe("Original content written for this project.");
+  });
+
   it("requires provenance on a corpus file", () => {
     const result = corpusFileSchema.safeParse({ items: [item()] });
     expect(result.success).toBe(false);

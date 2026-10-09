@@ -43,13 +43,19 @@ export const examItemSchema = z
 
 export type ExamItem = z.infer<typeof examItemSchema>;
 
+/** A bare "x" or whitespace is not documentation (hard rule 1). */
+export const MIN_PROVENANCE_LENGTH = 20;
+
 export const corpusFileSchema = z
   .object({
     /**
      * Provenance is required, not decorative: the repo is public and must
      * contain only original content (GAP-002 / hard rule 1).
      */
-    provenance: z.string().min(1),
+    provenance: z
+      .string()
+      .trim()
+      .min(MIN_PROVENANCE_LENGTH, `provenance must be a real statement of at least ${MIN_PROVENANCE_LENGTH} characters`),
     items: z.array(examItemSchema).min(1),
   })
   .strict();
