@@ -69,8 +69,9 @@ On any publicly reachable host use a long random passcode (for example
 an attacker down but does not make a weak passcode safe.
 
 The server refuses to start with auth enabled and no passcode. `VIVA_AUTH_DISABLED=1` turns auth
-off for local development only. Note: `npm run dev` is currently broken (see
-[Known issues](#known-issues)); use `npm run build && npm start`.
+off for local development only. `npm run dev` builds once, then rebuilds on change
+(`tsc --watch`) and restarts the server (`node --watch dist/index.js`); it needs the same env as
+`npm start`.
 
 With no `VIVA_BEDROCK_REGION` the exam still runs end to end, but scoring answers that no grader
 is connected and the AWS client is never loaded.
@@ -237,9 +238,6 @@ Specs are in [CLAUDE.md](CLAUDE.md).
 
 ## Known issues
 
-- `npm run dev` fails: it runs `node --experimental-strip-types src/index.ts`, but the sources
-  import `./app.js`-style specifiers, which Node cannot resolve against `.ts` files. Use
-  `npm run build && npm start`.
 - Dependency audit (2026-10): `npm audit` was clean after in-range lockfile updates only
   (`npm audit fix`, no `--force`, `package.json` ranges unchanged): `@modelcontextprotocol/sdk`
   1.30.0 to 1.32.1 (GHSA-6qxp-vccf-f47h, an OAuth *client* flaw; Viva uses the server side),
