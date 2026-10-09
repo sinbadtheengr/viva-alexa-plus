@@ -3,7 +3,7 @@
 - **Date:** 2026-10-09T03:21:59.976Z
 - **Machine:** Windows_NT 10.0.26300 (Windows 11 Pro), x64; 12th Gen Intel(R) Core(TM) i7-12700K (20 logical cores); 31.8 GiB RAM
 - **Runtime:** Node v24.3.0
-- **Run:** 200 recorded exams per scenario after 10 unrecorded warm-up exams; 5 submit_response turns per exam; simulated model latency 3000ms. Reproduce with `npm run bench` (`BENCH_ITERATIONS`, `BENCH_WARMUP`, `BENCH_TURNS`, `BENCH_SCORER_DELAY_MS`).
+- **Run:** 200 recorded exams per scenario after 10 unrecorded warm-up exams; 5 submit_response turns per exam; simulated model latency 3000ms. Refresh this file with `npm run bench:report` (200 exams); a plain `npm run bench` writes to untracked bench-output/latency.md instead (`BENCH_ITERATIONS`, `BENCH_WARMUP`, `BENCH_TURNS`, `BENCH_SCORER_DELAY_MS`).
 - **Verdict:** PASS. The gate is client-observed p95 <= the F-4 budget for every row in every scenario.
 
 **Read this first.** This is a local-loopback run with fakes: the app, OAuth 2.1 + PKCE flow, bearer middleware and Streamable HTTP transport are the real ones, but the grader and the follow-up probe generator are fakes (no Bedrock), and there is no Alexa+ and no network between client and server. It proves **server-side budget compliance** (what this process costs per call). It does **not** prove end-to-end Alexa+ latency, which adds the Internet path, TLS, Alexa+'s own orchestration, speech recognition and synthesis.

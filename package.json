@@ -13,6 +13,7 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "bench": "npm run build && node dist/bench/run.js",
+    "bench:report": "npm run build && node dist/bench/run.js --report",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc -p tsconfig.json --noEmit"

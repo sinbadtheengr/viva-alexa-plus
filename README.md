@@ -164,11 +164,12 @@ compliance, **not** end-to-end Alexa+ latency. See the caveats in the report.
 npm run build          # tsc
 npm test               # vitest, 12 files
 npm run typecheck
-npm run bench          # rewrites docs/latency.md; BENCH_OUT=- prints only
+npm run bench          # writes bench-output/latency.md (untracked); BENCH_OUT=- prints only
+npm run bench:report   # 200 iterations, refreshes the committed docs/latency.md
 ```
 
 Benchmark tuning: `BENCH_ITERATIONS` (200), `BENCH_WARMUP` (10), `BENCH_TURNS` (5),
-`BENCH_SCORER_DELAY_MS` (3000), `BENCH_OUT` (path, or `-` to skip the file).
+`BENCH_SCORER_DELAY_MS` (3000), `BENCH_OUT` (path, or `-` to skip the file; default `bench-output/latency.md`).
 
 ### Environment variables
 
@@ -223,6 +224,12 @@ Specs are in [CLAUDE.md](CLAUDE.md).
 - `npm run dev` fails: it runs `node --experimental-strip-types src/index.ts`, but the sources
   import `./app.js`-style specifiers, which Node cannot resolve against `.ts` files. Use
   `npm run build && npm start`.
+- Dependency audit (2026-10): `npm audit` was clean after in-range lockfile updates only
+  (`npm audit fix`, no `--force`, `package.json` ranges unchanged): `@modelcontextprotocol/sdk`
+  1.30.0 to 1.32.1 (GHSA-6qxp-vccf-f47h, an OAuth *client* flaw; Viva uses the server side),
+  `@modelcontextprotocol/client` and `core` 2.0.0 to 2.3.1 (transitive via ext-apps), `proxy-addr`
+  2.0.8, `fast-uri` 3.1.8, `ip-address` 10.7.3, `source-map-js` 1.2.2 (dev-only). Re-run
+  `npm audit` before release; new advisories appear over time.
 - Open gaps: see [GAPS_AND_ISSUES.md](GAPS_AND_ISSUES.md).
 
 ## Docs
