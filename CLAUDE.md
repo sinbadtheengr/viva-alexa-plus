@@ -4,7 +4,8 @@ Decision-free specs. Every design decision is already made here; implementing an
 require no product judgment. If a spec forces a decision, that is a defect in the spec —
 raise it in GAPS_AND_ISSUES.md rather than deciding ad hoc.
 
-**Stack:** TypeScript, Node 24, `@modelcontextprotocol/sdk`, `@modelcontextprotocol/ext-apps`,
+**Stack:** TypeScript, Node 24 (the version it is built and tested on; `engines` requires
+`>=24`), `@modelcontextprotocol/sdk`, `@modelcontextprotocol/ext-apps`,
 `express`, `@anthropic-ai/bedrock-sdk` (Mantle client) + `@anthropic-ai/sdk`, `zod`, `vitest`. No database in v1 — sessions in memory,
 progress in a JSON store behind an interface so it can be swapped.
 
@@ -19,8 +20,15 @@ progress in a JSON store behind an interface so it can be swapped.
 
 ## F-1 · MCP server over Streamable HTTP
 
-Serve MCP spec **2025-11-25** over Streamable HTTP (JSON-RPC 2.0). No SSE transport.
-Single endpoint `POST /mcp`. Health check at `GET /healthz` returning `{ok:true,version}`.
+Serve MCP spec **2025-11-25** over Streamable HTTP (JSON-RPC 2.0) on the single endpoint
+`/mcp`. The deprecated standalone HTTP+SSE transport (spec 2024-11-05, separate `/sse` and
+message endpoints) is **not** implemented. `POST /mcp` carries every JSON-RPC request; `GET` and
+`DELETE` on the same path serve the transport's optional server stream and session teardown,
+keyed by `Mcp-Session-Id`. The transport may answer a POST with either `application/json` or a
+`text/event-stream` body, as Streamable HTTP allows, so a client must accept both. Each MCP
+session gets its own transport and server; exam sessions, progress, scorer and probes are shared
+across them. *(Ratified from FRICTION-011 and GAP-015.)* Health check at `GET /healthz`
+returning `{ok:true,version}`.
 Structured request logging with per-tool duration in ms — needed to prove the 500ms budget.
 
 ## F-2 · Exam corpus schema
@@ -178,8 +186,14 @@ Must degrade to voice-only — every view's content is also returned as tool tex
 ## F-9 · OAuth 2.1 + PKCE
 
 Authorization code flow with PKCE (S256). Unauthenticated requests to `/mcp` return
-**401**. Host protected-resource metadata at `/.well-known/oauth-authorization-server`
-advertising `code_challenge_methods_supported: ["S256"]`. Bearer tokens in the
+**401**. Publish **authorization-server metadata** (RFC 8414) at
+`/.well-known/oauth-authorization-server`, advertising
+`code_challenge_methods_supported: ["S256"]`, and **protected-resource metadata** (RFC 9728) at
+`/.well-known/oauth-protected-resource/mcp` (the bare `/.well-known/oauth-protected-resource`
+path returns the same document). The 401 response from `/mcp` carries a `WWW-Authenticate`
+challenge whose `resource_metadata` names the protected-resource document. *(Ratified from
+FRICTION-006: Amazon's QuickStart names the authorization-server path for the resource
+metadata, which are two different documents.)* Bearer tokens in the
 `Authorization` header only, never query strings. Support the `resource` parameter on
 authorization and token requests. Do not implement Dynamic Client Registration, OIDC, or
 step-up authorization — Alexa+ does not support them yet.

@@ -34,7 +34,7 @@ state, timing and a rubric that outlive any single turn.
 
 ## Quick start
 
-Requires Node 22+ (developed on Node 24).
+Requires Node 24+ (the version it is built and tested on).
 
 ```bash
 npm install

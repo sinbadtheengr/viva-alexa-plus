@@ -6,7 +6,7 @@
   "description": "An oral-exam examiner for Alexa+ — a self-hosted MCP server that runs timed, rubric-scored speaking exams by voice.",
   "type": "module",
   "engines": {
-    "node": ">=22"
+    "node": ">=24"
   },
   "scripts": {
     "dev": "node --watch --experimental-strip-types src/index.ts",
