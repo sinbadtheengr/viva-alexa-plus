@@ -30,7 +30,7 @@ export function renderMarkdown(result: BenchResult): string {
   out.push(
     `- **Run:** ${o.iterations} recorded exams per scenario after ${o.warmup} unrecorded warm-up exams; ` +
       `${o.turns} submit_response turns per exam; simulated model latency ${o.scorerDelayMs}ms. ` +
-      "Reproduce with `npm run bench` (`BENCH_ITERATIONS`, `BENCH_WARMUP`, `BENCH_TURNS`, `BENCH_SCORER_DELAY_MS`).",
+      "Refresh this file with `npm run bench:report` (200 exams); a plain `npm run bench` writes to untracked bench-output/latency.md instead (`BENCH_ITERATIONS`, `BENCH_WARMUP`, `BENCH_TURNS`, `BENCH_SCORER_DELAY_MS`).",
   );
   out.push(
     `- **Verdict:** ${result.passed ? "PASS" : "FAIL"}. The gate is client-observed p95 <= the F-4 budget for every row in every scenario.`,

@@ -15,7 +15,10 @@ function num(name: string, fallback: number): number {
 }
 
 async function main(): Promise<number> {
-  const iterations = num("BENCH_ITERATIONS", 200);
+  // `--report` (npm run bench:report) is the only way to refresh the committed docs/latency.md:
+  // it pins the full 200-iteration run so a short run can never overwrite the published numbers.
+  const report = process.argv.includes("--report");
+  const iterations = report ? 200 : num("BENCH_ITERATIONS", 200);
   if (iterations < 1) throw new Error("BENCH_ITERATIONS must be at least 1");
   const result = await runBenchmark({
     iterations,
@@ -28,8 +31,10 @@ async function main(): Promise<number> {
   const markdown = renderMarkdown(result);
   process.stdout.write(markdown + "\n");
 
-  // BENCH_OUT=- skips the file (useful for quick local runs).
-  const out = process.env["BENCH_OUT"] ?? fileURLToPath(new URL("../../docs/latency.md", import.meta.url));
+  // Default output is an untracked path (bench-output/ is gitignored). BENCH_OUT overrides it;
+  // BENCH_OUT=- skips the file. --report writes the tracked docs/latency.md.
+  const root = (p: string) => fileURLToPath(new URL(`../../${p}`, import.meta.url));
+  const out = report ? (process.env["BENCH_OUT"] ?? root("docs/latency.md")) : (process.env["BENCH_OUT"] ?? root("bench-output/latency.md"));
   if (out !== "-") {
     await mkdir(dirname(out), { recursive: true });
     await writeFile(out, markdown, "utf8");

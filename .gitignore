@@ -6,6 +6,7 @@ dist/
 .DS_Store
 coverage/
 data/progress.json
+bench-output/
 
 # Claude Code agent worktrees
 .claude/worktrees/
