@@ -3,6 +3,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { RESOURCE_MIME_TYPE } from "@modelcontextprotocol/ext-apps/server";
 import { describe, expect, it } from "vitest";
+import { DEFAULT_LOCALE } from "../src/config.js";
 import { Corpus } from "../src/exam/corpus.js";
 import { SessionStore } from "../src/exam/session.js";
 import { InMemoryProgressStore } from "../src/grading/progress.js";
@@ -86,6 +87,17 @@ describe("resources", () => {
     const cue = (await client.readResource({ uri: VIEWS.cue.uri })).contents[0]!;
     expect((speaking._meta as any).ui.permissions).toEqual({ microphone: {} });
     expect((cue._meta as any).ui.permissions).toBeUndefined();
+  });
+
+  it("tags the document language from the locale parameter, defaulting from config", () => {
+    expect(renderView("cue")).toContain(`<html lang="${DEFAULT_LOCALE}"`);
+    expect(renderView("cue", "fr-FR")).toContain('<html lang="fr-FR"');
+    // A malformed locale never reaches the attribute.
+    const hostile = renderView("cue", '"><script>x</script>');
+    expect(hostile).not.toContain("<script>x");
+    expect(hostile).toContain(`<html lang="${DEFAULT_LOCALE}"`);
+    // At runtime the client follows the payload's own locale.
+    expect(CLIENT_JS).toMatch(/setAttribute\("lang", p\.locale\)/);
   });
 
   it("writes to the DOM only through textContent and never mentions pronunciation scoring", () => {

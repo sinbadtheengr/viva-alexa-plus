@@ -3,6 +3,7 @@ import type { Server } from "node:http";
 import { afterEach, describe, expect, it } from "vitest";
 import { createApp } from "../src/app.js";
 import { loadAuthConfig, type AuthConfig } from "../src/auth/config.js";
+import { DEFAULT_LOCALE } from "../src/config.js";
 import { Corpus } from "../src/exam/corpus.js";
 import { silentLogger } from "../src/mcp/logging.js";
 import { clientConfig, loadDemoConfig } from "../src/ui/demo.js";
@@ -284,7 +285,10 @@ describe("demo client · live server", () => {
 
     const page = await fetch(`${origin}/demo/`);
     expect(page.status).toBe(200);
-    expect(await page.text()).toContain("<title>Viva demo client</title>");
+    const pageHtml = await page.text();
+    expect(pageHtml).toContain("<title>Viva demo client</title>");
+    expect(pageHtml).toContain(`<html lang="${DEFAULT_LOCALE}">`);
+    expect(pageHtml).not.toContain("__VIVA_LANG__");
 
     for (const file of ["app.js", "lib.js", "style.css"]) {
       const res = await fetch(`${origin}/demo/${file}`);

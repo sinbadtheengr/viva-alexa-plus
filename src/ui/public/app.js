@@ -548,6 +548,7 @@ function populateSetup() {
     return catalog.find((c) => c.exam === sel.exam && c.locale === sel.locale);
   };
   const fillParts = () => {
+    document.documentElement.lang = currentEntry().locale;
     const parts = Object.keys(currentEntry().parts);
     $("selPart").textContent = "";
     for (const p of parts) { const o = document.createElement("option"); o.value = p; o.textContent = `Part ${p}`; $("selPart").append(o); }

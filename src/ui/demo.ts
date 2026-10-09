@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import express, { type Router } from "express";
 import type { AuthConfig } from "../auth/config.js";
@@ -81,6 +82,25 @@ export function demoRouter(demo: DemoConfig, auth: AuthConfig, corpus: Corpus): 
   router.get(`${DEMO_PATH}/config.json`, (_req, res) => {
     res.setHeader("Cache-Control", "no-store");
     res.json(doc);
+  });
+
+  // index.html is a template so its lang follows the configured default locale.
+  const indexHtml = (): string | null => {
+    for (const dir of [PUBLIC_DIR, SOURCE_PUBLIC_DIR]) {
+      try {
+        return readFileSync(dir + "index.html", "utf8").replaceAll("__VIVA_LANG__", DEFAULT_LOCALE);
+      } catch {
+        /* try the next candidate */
+      }
+    }
+    return null;
+  };
+  router.get([DEMO_PATH, `${DEMO_PATH}/`, `${DEMO_PATH}/index.html`], (req, res, next) => {
+    if (req.path === DEMO_PATH) return res.redirect(301, `${DEMO_PATH}/`);
+    const html = indexHtml();
+    if (html === null) return next();
+    res.setHeader("Cache-Control", "no-cache");
+    res.type("html").send(html);
   });
 
   const options = { index: "index.html", maxAge: 0, fallthrough: true } as const;

@@ -218,6 +218,7 @@ export const CLIENT_JS = String.raw`
     var main = el("main");
     root.appendChild(main);
     var p = state.payload || {};
+    if (typeof p.locale === "string" && p.locale) document.documentElement.setAttribute("lang", p.locale);
     if (!state.payload && !state.text) {
       main.appendChild(el("p", "eyebrow", "Viva"));
       main.appendChild(el("p", "followup", "Waiting for your exam to begin."));

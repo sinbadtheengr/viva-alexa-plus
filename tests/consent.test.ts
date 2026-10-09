@@ -4,6 +4,7 @@ import type { Server } from "node:http";
 import { afterEach, describe, expect, it } from "vitest";
 import { createApp } from "../src/app.js";
 import { loadAuthConfig } from "../src/auth/config.js";
+import { DEFAULT_LOCALE } from "../src/config.js";
 import { Corpus } from "../src/exam/corpus.js";
 import { silentLogger } from "../src/mcp/logging.js";
 import { item } from "./fixtures.js";
@@ -61,6 +62,15 @@ function post(origin: string, fields: Record<string, string>) {
     redirect: "manual",
   });
 }
+
+describe("consent page language", () => {
+  it("tags the document with the configured default locale", async () => {
+    const origin = await start();
+    const rid = await pendingRid(origin);
+    const html = await fetch(`${origin}/consent?rid=${rid}`).then((r) => r.text());
+    expect(html).toContain(`<html lang="${DEFAULT_LOCALE}">`);
+  });
+});
 
 describe("GAP-016 · consent screen default button", () => {
   it("renders Authorize as the first submit control, with Cancel still present", async () => {

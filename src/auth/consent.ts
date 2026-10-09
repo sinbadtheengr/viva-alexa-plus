@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import express, { type Request, type Response, type Router } from "express";
 import type { AuthConfig } from "./config.js";
+import { DEFAULT_LOCALE } from "../config.js";
 import { PASSCODE_SUBJECT } from "./identity.js";
 import { PasscodeThrottle, normalizeIp } from "./throttle.js";
 import { CONSENT_PATH, type VivaOAuthProvider } from "./provider.js";
@@ -49,7 +50,7 @@ function page(options: {
     ? `<dt>Resource</dt><dd><code>${escapeHtml(options.resource)}</code></dd>`
     : "";
   return `<!doctype html>
-<html lang="en"><head><meta charset="utf-8">
+<html lang="${escapeHtml(DEFAULT_LOCALE)}"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Authorize Viva</title>
 <style>
