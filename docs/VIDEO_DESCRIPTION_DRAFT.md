@@ -50,10 +50,10 @@ CHAPTERS (adjust to your final cut)
 2:30 Engineering and what's next
 
 LINKS
-Source (MIT licensed): <REPO URL>
+Source (MIT licensed): https://github.com/sinbadtheengr/viva-alexa-plus
 Live demo: <DEMO URL, if deployed>
-Friction log (what building on Alexa+ was really like): <REPO URL>/blob/main/FRICTION_LOG.md
-Latency evidence: <REPO URL>/blob/main/docs/latency.md
+Friction log (what building on Alexa+ was really like): https://github.com/sinbadtheengr/viva-alexa-plus/blob/main/FRICTION_LOG.md
+Latency evidence: https://github.com/sinbadtheengr/viva-alexa-plus/blob/main/docs/latency.md
 
 Built with TypeScript, the MCP TypeScript SDK, Express, and Claude on Amazon Bedrock.
 ```
@@ -61,7 +61,7 @@ Built with TypeScript, the MCP TypeScript SDK, Express, and Claude on Amazon Bed
 ## Short version (if the field is capped)
 
 ```
-Viva is an MCP server that turns Alexa+ into a timed IELTS speaking examiner: cue cards, live follow-ups, three-criterion scoring on Claude via Amazon Bedrock, and progress tracking. Demo runs on our own browser client playing the Alexa+ role; the Alexa+ toolchain is closed to participants. No pronunciation scoring. Source (MIT): <REPO URL>
+Viva is an MCP server that turns Alexa+ into a timed IELTS speaking examiner: cue cards, live follow-ups, three-criterion scoring on Claude via Amazon Bedrock, and progress tracking. Demo runs on our own browser client playing the Alexa+ role; the Alexa+ toolchain is closed to participants. No pronunciation scoring. Source (MIT): https://github.com/sinbadtheengr/viva-alexa-plus
 ```
 
 ## Check before you paste
