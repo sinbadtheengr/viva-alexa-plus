@@ -22,7 +22,10 @@ import { AuthStore, StaticClientsStore } from "./store.js";
  *
  * PKCE itself is verified by the SDK's token handler, which calls
  * `challengeForAuthorizationCode` and checks the verifier against it — and
- * requires `code_verifier` unconditionally, so the flow is PKCE-only. This
+ * requires `code_verifier` unconditionally, so the flow is PKCE-only. We keep
+ * the SDK's comparison and make it cost the caller the code: the challenge
+ * lookup marks the code, so a failed comparison (which stops before
+ * `exchangeAuthorizationCode`) leaves a code that burns on its next use. This
  * class owns everything else: single-use codes, redirect-URI binding, and
  * RFC 8707 audience binding so a token minted for Viva cannot be replayed
  * against another MCP server.
@@ -77,8 +80,15 @@ export class VivaOAuthProvider implements OAuthServerProvider {
     client: OAuthClientInformationFull,
     authorizationCode: string,
   ): Promise<string> {
-    const entry = this.store.peekCode(authorizationCode);
-    if (!entry || entry.clientId !== client.client_id) {
+    // Not a pure read. The SDK compares the verifier after this returns and
+    // only then calls exchangeAuthorizationCode; if the comparison fails that
+    // call never happens, and the code stays marked so any retry burns it.
+    const entry = this.store.challengeCode(authorizationCode);
+    if (!entry) {
+      throw new InvalidGrantError("Authorization code is invalid or expired.");
+    }
+    if (entry.clientId !== client.client_id) {
+      this.store.burnCode(authorizationCode);
       throw new InvalidGrantError("Authorization code is invalid or expired.");
     }
     return entry.codeChallenge;
@@ -107,7 +117,7 @@ export class VivaOAuthProvider implements OAuthServerProvider {
     }
     this.#assertResource(resource);
 
-    return this.#mint(entry.clientId, entry.subject, entry.scopes, entry.resource);
+    return this.#mint(entry.clientId, entry.subject, entry.scopes, entry.resource, entry.grantId);
   }
 
   async exchangeRefreshToken(
@@ -135,7 +145,7 @@ export class VivaOAuthProvider implements OAuthServerProvider {
     // subject rides across the rotation — F-7 progress is keyed on it, and a
     // history that reset every time a token refreshed would be worthless.
     this.store.revokeToken(refreshToken);
-    return this.#mint(entry.clientId, entry.subject, requested, entry.resource);
+    return this.#mint(entry.clientId, entry.subject, requested, entry.resource, entry.grantId);
   }
 
   async verifyAccessToken(token: string): Promise<AuthInfo> {
@@ -163,13 +173,14 @@ export class VivaOAuthProvider implements OAuthServerProvider {
     subject: string,
     scopes: readonly string[],
     resource: string | undefined,
+    grantId: string | undefined,
   ): OAuthTokens {
     const accessToken = this.store.issueToken(
-      { clientId, subject, scopes, resource, kind: "access" },
+      { clientId, subject, scopes, resource, kind: "access", ...(grantId ? { grantId } : {}) },
       this.#config.accessTokenTtlSeconds,
     );
     const refreshToken = this.store.issueToken(
-      { clientId, subject, scopes, resource, kind: "refresh" },
+      { clientId, subject, scopes, resource, kind: "refresh", ...(grantId ? { grantId } : {}) },
       this.#config.accessTokenTtlSeconds * 24,
     );
     return {
