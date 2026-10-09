@@ -42,6 +42,8 @@ export interface AppOptions {
   readonly probes?: ProbeCoordinator;
   /** Serve the browser demo client (the Alexa+ stand-in) under /demo. Omit to leave it off. */
   readonly demo?: DemoConfig;
+  /** Clock for the consent-screen passcode throttle (tests). Defaults to Date.now. */
+  readonly consentClock?: () => number;
   /** GAP-015 · Idle limit for an MCP transport session. Defaults to config. */
   readonly mcpSessionIdleMs?: number;
   /** GAP-015 · Max concurrent MCP transport sessions. Defaults to config. */
@@ -163,6 +165,11 @@ export async function createApp(options: AppOptions): Promise<BuiltApp> {
 
   const app = express();
   app.disable("x-powered-by");
+  // GAP-011: req.ip stays the socket address unless a proxy is explicitly declared,
+  // otherwise X-Forwarded-For (client-controlled) would defeat the consent throttle.
+  if (options.auth.enabled && options.auth.trustProxy !== undefined) {
+    app.set("trust proxy", options.auth.trustProxy);
+  }
 
   app.get("/healthz", (_req, res) => {
     res.json({ ok: true, version: SERVER_VERSION, authenticated: options.auth.enabled });
@@ -186,7 +193,7 @@ export async function createApp(options: AppOptions): Promise<BuiltApp> {
         scopesSupported: ["exam", "progress"],
       }),
     );
-    app.use(consentRouter(provider, options.auth));
+    app.use(consentRouter(provider, options.auth, options.consentClock));
 
     guards.push(
       requireBearerAuth({

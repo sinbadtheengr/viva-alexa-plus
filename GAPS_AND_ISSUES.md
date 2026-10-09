@@ -217,9 +217,29 @@ long-lived refresh token with no way to revoke it is a poor default for anything
 ## GAP-011 · S2 · OPEN · User authentication is demo-grade
 
 The authorization server authenticates the *user* with a single shared passcode
-(`VIVA_DEMO_PASSCODE`), compared in constant time, with five attempts per authorization
-request. That is enough to demonstrate a correct OAuth 2.1 + PKCE flow and to keep the
-server closed by default, and it is honest about what it is - but it is not identity.
+(`VIVA_DEMO_PASSCODE`), compared in constant time. That is enough to demonstrate a correct
+OAuth 2.1 + PKCE flow and to keep the server closed by default, and it is honest about what
+it is - but it is not identity.
+
+*Guess throttling (QA S1, 2026-10-08).* The original five-attempts-per-authorization-request
+cap was not a limit at all, because `GET /authorize` mints new request ids for anyone (200
+guesses in 162 ms were observed). The consent POST now also enforces, in `src/auth/throttle.ts`:
+- a per-client-IP lockout (5 failures, then 60 s, doubling on each repeat up to 1 h, forgotten
+  after 15 quiet minutes). A locked IP is refused even with the correct passcode; other IPs
+  are unaffected. Refusals are `429` with `Retry-After` and an on-page message. IPv6 is
+  keyed by /64.
+- a global backstop: 50 failures across all IPs in 10 minutes puts the endpoint in slow mode
+  (one attempt per 30 s from anyone) until the window rolls over. It slows, never disables,
+  and recovers automatically.
+- client IP is the socket address; `X-Forwarded-For` is honoured only when
+  `VIVA_TRUST_PROXY` is set. Memory is bounded (10 000 tracked IPs, oldest evicted).
+
+Still demo-grade: the throttle is in process memory (resets on restart, not shared across
+instances). Slow mode means a determined attacker can keep the legitimate user waiting up to
+a window by burning the global budget, though not locked out indefinitely. A short passcode
+is still guessable in the long run at roughly 5 guesses per IP per minute, so use a long
+random one on any public host. Behind a proxy that is not declared via `VIVA_TRUST_PROXY`,
+all clients share one address and one lockout.
 
 Consequences today:
 - There is one credential, so there is one grant subject (`passcode:default`). F-7 keys

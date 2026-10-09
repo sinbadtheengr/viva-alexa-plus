@@ -1,4 +1,5 @@
 import type { OAuthClientInformationFull } from "@modelcontextprotocol/sdk/shared/auth.js";
+import { DEFAULT_THROTTLE, type ThrottleConfig } from "./throttle.js";
 
 /**
  * F-9 · Auth configuration.
@@ -22,6 +23,14 @@ export interface AuthConfig {
   readonly clients: readonly OAuthClientInformationFull[];
   readonly accessTokenTtlSeconds: number;
   readonly authorizationCodeTtlSeconds: number;
+  /** GAP-011 · Passcode guess throttling on the consent POST. */
+  readonly throttle: ThrottleConfig;
+  /**
+   * Express `trust proxy` setting, or undefined to trust nothing (the default, and the
+   * only safe choice when clients connect directly: X-Forwarded-For is then
+   * attacker-controlled and rotating it would bypass the throttle).
+   */
+  readonly trustProxy: number | string | undefined;
 }
 
 export class AuthConfigError extends Error {
@@ -51,6 +60,33 @@ function parseClients(raw: string | undefined): OAuthClientInformationFull[] {
   });
 }
 
+function seconds(env: NodeJS.ProcessEnv, name: string, fallbackMs: number): number {
+  const raw = env[name];
+  if (raw === undefined || raw === "") return fallbackMs;
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n <= 0) throw new AuthConfigError(`${name} must be a positive number of seconds.`);
+  return Math.round(n * 1000);
+}
+
+function count(env: NodeJS.ProcessEnv, name: string, fallback: number): number {
+  const raw = env[name];
+  if (raw === undefined || raw === "") return fallback;
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n < 1) throw new AuthConfigError(`${name} must be a positive integer.`);
+  return n;
+}
+
+function parseTrustProxy(raw: string | undefined): number | string | undefined {
+  if (raw === undefined || raw === "" || raw === "0" || raw === "false") return undefined;
+  if (raw === "true") {
+    throw new AuthConfigError(
+      "VIVA_TRUST_PROXY=true trusts every hop, so any client could forge its address. " +
+        "Give the number of proxies in front of the server (e.g. 1), or an Express subnet list.",
+    );
+  }
+  return /^\d+$/.test(raw) ? Number(raw) : raw;
+}
+
 export function loadAuthConfig(env: NodeJS.ProcessEnv = process.env): AuthConfig {
   const enabled = env["VIVA_AUTH_DISABLED"] !== "1";
   const issuer = env["VIVA_ISSUER_URL"] ?? "http://127.0.0.1:8787";
@@ -73,5 +109,16 @@ export function loadAuthConfig(env: NodeJS.ProcessEnv = process.env): AuthConfig
     clients: parseClients(env["VIVA_OAUTH_CLIENTS"]),
     accessTokenTtlSeconds: Number(env["VIVA_ACCESS_TOKEN_TTL"] ?? 3600),
     authorizationCodeTtlSeconds: Number(env["VIVA_AUTH_CODE_TTL"] ?? 60),
+    throttle: {
+      maxFailures: count(env, "VIVA_CONSENT_MAX_FAILURES", DEFAULT_THROTTLE.maxFailures),
+      lockBaseMs: seconds(env, "VIVA_CONSENT_LOCK_SECONDS", DEFAULT_THROTTLE.lockBaseMs),
+      lockMaxMs: seconds(env, "VIVA_CONSENT_LOCK_MAX_SECONDS", DEFAULT_THROTTLE.lockMaxMs),
+      windowMs: seconds(env, "VIVA_CONSENT_WINDOW_SECONDS", DEFAULT_THROTTLE.windowMs),
+      globalMaxFailures: count(env, "VIVA_CONSENT_GLOBAL_MAX_FAILURES", DEFAULT_THROTTLE.globalMaxFailures),
+      globalWindowMs: seconds(env, "VIVA_CONSENT_GLOBAL_WINDOW_SECONDS", DEFAULT_THROTTLE.globalWindowMs),
+      globalSlowMs: seconds(env, "VIVA_CONSENT_GLOBAL_SLOW_SECONDS", DEFAULT_THROTTLE.globalSlowMs),
+      maxTrackedIps: count(env, "VIVA_CONSENT_MAX_TRACKED_IPS", DEFAULT_THROTTLE.maxTrackedIps),
+    },
+    trustProxy: parseTrustProxy(env["VIVA_TRUST_PROXY"]),
   };
 }

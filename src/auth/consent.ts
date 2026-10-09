@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import express, { type Request, type Response, type Router } from "express";
 import type { AuthConfig } from "./config.js";
 import { PASSCODE_SUBJECT } from "./identity.js";
+import { PasscodeThrottle, normalizeIp } from "./throttle.js";
 import { CONSENT_PATH, type VivaOAuthProvider } from "./provider.js";
 
 /**
@@ -106,8 +107,19 @@ function redirectWithError(
   res.redirect(target.href);
 }
 
-export function consentRouter(provider: VivaOAuthProvider, config: AuthConfig): Router {
+function waitText(ms: number): string {
+  const s = Math.ceil(ms / 1000);
+  if (s < 90) return `${s} second${s === 1 ? "" : "s"}`;
+  return `${Math.ceil(s / 60)} minutes`;
+}
+
+export function consentRouter(
+  provider: VivaOAuthProvider,
+  config: AuthConfig,
+  clock: () => number = Date.now,
+): Router {
   const router = express.Router();
+  const throttle = new PasscodeThrottle(config.throttle, clock);
   const attempts = new Map<string, number>();
 
   router.get(CONSENT_PATH, (req: Request, res: Response) => {
@@ -147,8 +159,41 @@ export function consentRouter(provider: VivaOAuthProvider, config: AuthConfig): 
       return;
     }
 
+    const client = provider.clientsStore.getClient(pending.clientId);
+    const ip = normalizeIp(req.ip ?? req.socket.remoteAddress);
+    const refuse = (retryAfterMs: number, scope: "ip" | "global"): void => {
+      const retrySeconds = Math.max(1, Math.ceil(retryAfterMs / 1000));
+      res
+        .status(429)
+        .set("Retry-After", String(retrySeconds))
+        .type("html")
+        .send(
+          page({
+            rid,
+            clientName: client?.client_name ?? pending.clientId,
+            resource: pending.resource,
+            error:
+              scope === "ip"
+                ? `Too many incorrect passcodes. Try again in ${waitText(retryAfterMs)}.`
+                : `Too many incorrect passcodes were entered across the service. Try again in ${waitText(retryAfterMs)}.`,
+          }),
+        );
+    };
+    // Checked before the passcode is compared: a locked caller learns nothing, not even
+    // whether the right passcode would have worked.
+    const gate = throttle.check(ip);
+    if (!gate.allowed) {
+      refuse(gate.retryAfterMs, gate.scope);
+      return;
+    }
+
     const given = typeof body["passcode"] === "string" ? body["passcode"] : "";
     if (!passcodeMatches(given, config.passcode)) {
+      const strike = throttle.recordFailure(ip);
+      if (!strike.allowed) {
+        refuse(strike.retryAfterMs, strike.scope);
+        return;
+      }
       const count = (attempts.get(rid) ?? 0) + 1;
       if (count >= MAX_ATTEMPTS) {
         // Burn the request rather than allowing unlimited guesses against it.
@@ -158,7 +203,6 @@ export function consentRouter(provider: VivaOAuthProvider, config: AuthConfig): 
         return;
       }
       attempts.set(rid, count);
-      const client = provider.clientsStore.getClient(pending.clientId);
       res
         .status(401)
         .type("html")
@@ -175,6 +219,7 @@ export function consentRouter(provider: VivaOAuthProvider, config: AuthConfig): 
       return;
     }
 
+    throttle.recordSuccess(ip);
     provider.store.takePending(rid);
     attempts.delete(rid);
 

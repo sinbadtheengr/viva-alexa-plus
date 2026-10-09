@@ -44,7 +44,7 @@ npm run build && npm test          # 232 tests
 Run the server with the browser demo client (the Alexa+ stand-in, see below):
 
 ```bash
-export VIVA_DEMO_PASSCODE='pick-something'
+export VIVA_DEMO_PASSCODE='REPLACE-ME-with-a-long-random-passcode'
 export VIVA_OAUTH_CLIENTS='[{"client_id":"viva-demo","client_name":"Viva Demo","redirect_uris":["http://127.0.0.1:8787/demo/"]}]'
 npm start                           # serves dist/, so `npm run build` must have run
 # open http://127.0.0.1:8787/demo/   (Chrome or Edge for speech recognition)
@@ -63,6 +63,10 @@ Optional switches:
 export VIVA_BEDROCK_REGION='us-east-1'           # enables rubric scoring and follow-up probes (needs AWS credentials)
 export VIVA_PROGRESS_FILE='data/progress.json'   # persist progress; unset = in memory, lost on restart
 ```
+
+On any publicly reachable host use a long random passcode (for example
+`openssl rand -base64 24`): the passcode is the only credential, and the guess throttle slows
+an attacker down but does not make a weak passcode safe.
 
 The server refuses to start with auth enabled and no passcode. `VIVA_AUTH_DISABLED=1` turns auth
 off for local development only. Note: `npm run dev` is currently broken (see
@@ -182,6 +186,15 @@ Benchmark tuning: `BENCH_ITERATIONS` (200), `BENCH_WARMUP` (10), `BENCH_TURNS` (
 | `VIVA_RESOURCE_URL` | `<issuer>/mcp` | RFC 8707 resource identifier tokens are bound to |
 | `VIVA_ACCESS_TOKEN_TTL` | `3600` | Access token lifetime, seconds |
 | `VIVA_AUTH_CODE_TTL` | `60` | Authorization code lifetime, seconds |
+| `VIVA_TRUST_PROXY` | unset | Number of reverse proxies in front of the server (e.g. `1`), or an Express subnet list. Unset trusts no `X-Forwarded-For`, which is correct when clients connect directly. Set it behind a proxy, or every client shares the proxy's address in the passcode throttle. `true` is rejected |
+| `VIVA_CONSENT_MAX_FAILURES` | `5` | Wrong passcodes from one IP before it is locked out |
+| `VIVA_CONSENT_LOCK_SECONDS` | `60` | First lockout length; doubles on each repeat lockout |
+| `VIVA_CONSENT_LOCK_MAX_SECONDS` | `3600` | Cap on the doubling lockout |
+| `VIVA_CONSENT_WINDOW_SECONDS` | `900` | An IP's failures and backoff level are forgotten after this long without a new failure |
+| `VIVA_CONSENT_GLOBAL_MAX_FAILURES` | `50` | Wrong passcodes across all IPs, per global window, before the service drops to slow mode |
+| `VIVA_CONSENT_GLOBAL_WINDOW_SECONDS` | `600` | Global failure window; slow mode ends by itself when it rolls over |
+| `VIVA_CONSENT_GLOBAL_SLOW_SECONDS` | `30` | In slow mode, one passcode attempt is admitted per this interval |
+| `VIVA_CONSENT_MAX_TRACKED_IPS` | `10000` | Cap on remembered IPs (oldest evicted) |
 | `VIVA_BEDROCK_REGION` (or `AWS_REGION`) | unset | Enables Bedrock scoring and probes; unset runs without a grader |
 | `VIVA_BEDROCK_MODEL` | `anthropic.claude-opus-5` | Model id for scoring (and probes unless overridden) |
 | `VIVA_BEDROCK_PROBE_MODEL` | `VIVA_BEDROCK_MODEL` | Model id for follow-up probes |
