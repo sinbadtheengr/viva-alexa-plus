@@ -98,7 +98,7 @@ export function renderMarkdown(result: BenchResult): string {
   );
   out.push("- Calls are sequential (one candidate, one session), which matches a voice conversation. Concurrency is not measured.");
   out.push("- The first exams are discarded as warm-up, so cold-start cost (first request after boot) is not in the table.");
-  out.push("- The server accepts one MCP session per process (GAP-015); each scenario therefore boots its own app instance.");
+  out.push("- Each scenario boots its own app instance so the two runs stay independent; the server itself now supports many concurrent MCP sessions (GAP-015, closed), which this benchmark does not exercise.");
   out.push("");
   return out.join("\n");
 }

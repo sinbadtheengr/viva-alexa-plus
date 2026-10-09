@@ -42,7 +42,7 @@ transitions and timing, which is what a plain conversational model cannot do on 
 
 ## Status
 
-**F-1 to F-7 and F-9 are done; F-8 is built and checked in a stand-in host (see below)** - 211 tests green, build clean.
+**F-1 to F-7 and F-9 are done; F-8 is built and checked in a stand-in host (see below)** - 232 tests green, build clean.
 
 Rubric scoring runs on Claude Opus 5 via Amazon Bedrock (the Mantle client), with the
 allowed band set baked into a per-exam structured-output schema so an out-of-scale level
