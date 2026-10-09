@@ -38,7 +38,7 @@ Requires Node 22+ (developed on Node 24).
 
 ```bash
 npm install
-npm run build && npm test          # 232 tests
+npm run build && npm test          # 261 tests
 ```
 
 Run the server with the browser demo client (the Alexa+ stand-in, see below):
@@ -115,7 +115,7 @@ from CLAUDE.md F-4.
 
 ## What is verified, and what is not
 
-**Verified by code and tests** (`npm test`, 232 tests across 12 files):
+**Verified by code and tests** (`npm test`, 261 tests across 13 files):
 
 - Session state machine, overrun handling, corpus validation (including mandatory `provenance`).
 - Tool behaviour and error mapping; seed-first follow-ups; probes never block a turn.
