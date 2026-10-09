@@ -1,3 +1,6 @@
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
 /**
  * The only place locale and exam defaults are allowed to appear as literals.
  * Hard rule 2 (CLAUDE.md): locale is a parameter everywhere else.
@@ -6,8 +9,17 @@
 export const DEFAULT_LOCALE = process.env["VIVA_DEFAULT_LOCALE"] ?? "en-US";
 export const DEFAULT_EXAM = process.env["VIVA_DEFAULT_EXAM"] ?? "ielts";
 
-/** Corpus root, relative to the repo root unless absolute. */
-export const CORPUS_ROOT = process.env["VIVA_CORPUS_ROOT"] ?? "corpus";
+/** Repo/package root: one level above src/ (tsx, vitest) and dist/ (compiled) alike. */
+export const REPO_ROOT = fileURLToPath(new URL("../", import.meta.url));
+
+/**
+ * Corpus root. The default is <repo root>/corpus, independent of the working
+ * directory. VIVA_CORPUS_ROOT overrides it: absolute as-is, relative resolved
+ * against the process working directory (the usual meaning of a relative env path).
+ */
+export const CORPUS_ROOT = process.env["VIVA_CORPUS_ROOT"]
+  ? resolve(process.env["VIVA_CORPUS_ROOT"])
+  : resolve(REPO_ROOT, "corpus");
 
 /** F-3: sessions expire after 30 minutes idle. */
 export const SESSION_IDLE_MS = 30 * 60 * 1000;
