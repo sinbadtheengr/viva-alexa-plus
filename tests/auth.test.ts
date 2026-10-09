@@ -462,6 +462,17 @@ describe("F-9 · end to end against a live server", () => {
     expect(meta.authorization_servers).toContain(origin + "/");
   });
 
+  it("serves the same protected-resource metadata at the bare well-known path", async () => {
+    const { origin } = await startServer();
+
+    const bare = await fetch(`${origin}/.well-known/oauth-protected-resource`);
+    const suffixed = await fetch(`${origin}/.well-known/oauth-protected-resource/mcp`);
+
+    expect(bare.status).toBe(200);
+    expect(suffixed.status).toBe(200);
+    expect(await bare.json()).toEqual(await suffixed.json());
+  });
+
   it("rejects a bearer token it never issued", async () => {
     const { origin } = await startServer();
 

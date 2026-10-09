@@ -22,6 +22,8 @@ import { createLogger, type Logger } from "./mcp/logging.js";
 import { buildServer, SERVER_VERSION } from "./mcp/server.js";
 import { demoRouter, type DemoConfig } from "./ui/demo.js";
 
+const BARE_PROTECTED_RESOURCE_PATH = "/.well-known/oauth-protected-resource";
+
 /**
  * F-1 + F-9 · The HTTP application.
  *
@@ -180,6 +182,19 @@ export async function createApp(options: AppOptions): Promise<BuiltApp> {
 
   if (options.auth.enabled) {
     provider = new VivaOAuthProvider(options.auth);
+
+    // RFC 9728 clients may probe the bare well-known path as well as the
+    // resource-suffixed one the 401 challenge advertises. Rewrite the bare form
+    // onto the suffixed route so both serve the identical document.
+    const suffixedMetadataPath = new URL(getOAuthProtectedResourceMetadataUrl(options.auth.resourceUrl)).pathname;
+    if (suffixedMetadataPath !== BARE_PROTECTED_RESOURCE_PATH) {
+      app.use((req, _res, next) => {
+        if (req.path === BARE_PROTECTED_RESOURCE_PATH) {
+          req.url = suffixedMetadataPath + req.url.slice(BARE_PROTECTED_RESOURCE_PATH.length);
+        }
+        next();
+      });
+    }
 
     // Authorization server: /authorize, /token and the metadata documents.
     // Dynamic Client Registration is absent because StaticClientsStore has no
