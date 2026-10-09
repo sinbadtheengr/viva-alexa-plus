@@ -137,6 +137,14 @@ supports many concurrent MCP sessions (GAP-015, closed): a reload or a second cl
 initialises its own. Idle MCP sessions are reaped after `VIVA_MCP_SESSION_IDLE_MS` (default 30 min,
 cap `VIVA_MCP_SESSION_MAX` = 100); exam state and progress are shared across them.
 
+## Latency evidence
+
+`npm run bench` boots the real app on a loopback port, signs in with the real OAuth 2.1 + PKCE
+flow and drives full exams over Streamable HTTP, timing every tool against its F-4 budget. It
+writes [docs/latency.md](docs/latency.md) and exits non-zero if any tool's p95 exceeds its budget.
+It uses fakes for the model (a slow scorer, a probe generator that never answers), so it proves
+server-side budget compliance, not end-to-end Alexa+ latency. Tune with `BENCH_ITERATIONS`.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
