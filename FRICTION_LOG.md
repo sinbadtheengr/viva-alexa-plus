@@ -1,75 +1,110 @@
 # FRICTION_LOG — building on Alexa+
 
 Kept continuously while building, per the hackathon's friction-log bonus (up to 10%).
-Each entry: what I tried, what happened, what it cost, what would have helped.
+Every entry has the same shape: **Expected**, **Happened**, **Impact**, **Suggested fix**.
+Wording is deliberately blunt; a friction log is only useful if it is honest. Entries are
+numbered in the order they were hit. Ratings are the author's.
 
-Format is deliberately blunt — a friction log is only useful if it is honest.
+## Summary, ranked by importance
+
+| Rank | Entry | One line | Who can fix it |
+|---|---|---|---|
+| 1 | FRICTION-001 | The docs say to run `alexa-ai` but never say where to get it; the obvious `npm` name is an unrelated third-party package | Amazon docs / package owner |
+| 2 | FRICTION-010 | The add-on toolchain is closed to participants and there is no simulator, so a demo needs its own Alexa+ stand-in (about a day) | Amazon Alexa+ team |
+| 3 | FRICTION-006 | The docs name the wrong well-known path for Protected Resource Metadata | Amazon docs |
+| 4 | FRICTION-003 | The 500 ms budget conflicts with "AI-native"; no sanctioned long-running-tool pattern | Amazon docs / platform |
+| 5 | FRICTION-002 | Not stated whether tools receive audio; blocks a whole category of apps (pronunciation) | Amazon docs / platform |
+| 6 | FRICTION-004 | Two 404s on the first-hour critical path | Amazon docs |
+| 7 | FRICTION-007 | Throwing the wrong OAuth error silently breaks token refresh | MCP TypeScript SDK |
+| 8 | FRICTION-005 | MCP SDK's transport does not typecheck against its own `Transport` interface | MCP TypeScript SDK |
+| 9 | FRICTION-012 | `registerAppResource` does not typecheck against its matching SDK; no no-bundler path | MCP ext-apps |
+| 10 | FRICTION-011 | Streamable HTTP transport answers in SSE and initialises once per instance | MCP TypeScript SDK docs |
+| 11 | FRICTION-008 | F-5's "replaces on the next turn" leaves staleness unspecified | This project's spec |
+| 12 | FRICTION-009 | `effort` on plain `messages.create` via Bedrock Mantle is unverified (no credentials) | Anthropic / AWS docs |
+
+Upstream contribution candidates (Open Source mini-challenge): FRICTION-005, 007, 012.
 
 ---
 
 ## FRICTION-001 · The docs tell you to run a command they never tell you how to install
 
-**Severity: high — this one has a security dimension.**
+**Severity: high. This one has a security dimension.**
 
-The MCP QuickStart's prerequisites say to have "the Alexa AI CLI installed and
-authenticated via `alexa-ai configure`." Neither the quickstart nor the Add-on API
-reference states **how to install it** — no npm package, no pip package, no download link.
-The linked CLI reference page (`/en-US/docs/alexa/add-ons/alexa-ai-cli-reference.html`)
-returned **404**.
+**Expected:** the MCP QuickStart's prerequisites ("the Alexa AI CLI installed and authenticated
+via `alexa-ai configure`") to say how to install the CLI.
 
-A developer following these docs will reasonably try `npm install -g alexa-ai`. That
-resolves to a **live third-party package** (v2.5.0, published 2026-09-07) — an unrelated
-WhatsApp bot engine from `github.com/AlexaInc/deepai`. Amazon's documentation is currently
-directing developers toward a name it does not control on the public registry.
+**Happened:** neither the quickstart nor the Add-on API reference says: no npm package, no pip
+package, no download link. The linked CLI reference page
+(`/en-US/docs/alexa/add-ons/alexa-ai-cli-reference.html`) returned **404**. A developer will
+reasonably try `npm install -g alexa-ai`, which resolves to a **live third-party package**
+(v2.5.0, published 2026-09-07): an unrelated WhatsApp bot engine from
+`github.com/AlexaInc/deepai`. Amazon's documentation is directing developers toward a name it
+does not control on the public registry.
 
-*Cost:* ~25 minutes, and a near-miss global install.
-*What would have helped:* one line — `npm install -g @amazon/alexa-ai` or a console
-download link — in the Prerequisites block. And Amazon claiming the npm name.
+**Impact:** about 25 minutes, and a near-miss global install of unknown code. Tracked as GAP-001.
 
----
-
-## FRICTION-002 · Tools receive transcript, not audio — undiscoverable from the docs
-
-Whether an MCP tool can access the user's raw utterance audio determines whether an entire
-category of application (pronunciation coaching, accent work, speech therapy, singing,
-anything prosodic) is buildable on Alexa+ at all. I could not find this stated either way.
-
-*Cost:* a design decision made on inference rather than documentation.
-*What would have helped:* an explicit "what your tool receives" section in the toolkit
-overview, listing exactly what is and is not in the tool payload.
-*Feature request:* opt-in audio (or prosodic features — pace, pauses, filler-word counts)
-in the tool payload, with user consent. It would open Alexa+ to language learning,
-accessibility, and clinical speech use cases that are currently impossible.
+**Suggested fix:** one line in the Prerequisites block (`npm install -g @amazon/alexa-ai` or a
+console download link), and Amazon claiming the npm name or documenting the exact package.
 
 ---
 
-## FRICTION-003 · The 500ms budget and "AI-native" pull in opposite directions
+## FRICTION-002 · Tools receive transcript, not audio, and the docs never say
 
-Add-ons are pitched as AI-native, but the documented round-trip budget is **under 500ms** —
-shorter than a single small-model inference call. Any add-on whose value comes from
-reasoning over the user's input has to invent its own deferred-work pattern, and nothing in
-the docs acknowledges this or suggests a sanctioned approach.
+**Expected:** a "what your tool receives" section in the toolkit overview.
 
-*Cost:* an architectural workaround (GAP-005) designed before writing any code.
-*What would have helped:* a documented long-running-tool pattern — a progress/polling
-convention, or guidance on what Alexa+ says to the user while a tool is still thinking.
+**Happened:** I could not find it stated either way whether an MCP tool can access the user's
+raw utterance audio. That answer decides whether pronunciation coaching, accent work, speech
+therapy, singing and anything prosodic is buildable on Alexa+ at all.
+
+**Impact:** a design decision made on inference rather than documentation (Viva scores three
+transcript-observable criteria and never pronunciation; GAP-004).
+
+**Suggested fix:** document exactly what is and is not in the tool payload. **Feature
+request:** opt-in audio, or prosodic features (pace, pauses, filler-word counts), in the tool
+payload, with user consent. It would open Alexa+ to language learning, accessibility and
+clinical speech use cases that are currently impossible.
 
 ---
 
-## FRICTION-004 · Doc 404s encountered
+## FRICTION-003 · The 500 ms budget and "AI-native" pull in opposite directions
 
-- `/docs/alexaplus/add-ons/set-up-development-environment.html` — 404, though the
+**Expected:** guidance for add-ons whose value comes from model reasoning.
+
+**Happened:** add-ons are pitched as AI-native, but the documented round-trip budget is **under
+500 ms**, shorter than a single small-model inference call. Nothing in the docs acknowledges
+this or suggests a sanctioned deferred-work pattern, so every add-on invents its own.
+
+**Impact:** an architectural workaround designed before writing any code (GAP-005): turn-taking
+tools stay local and fast, `score_session` returns a pending handle and `get_results` polls.
+
+**Suggested fix:** a documented long-running-tool pattern: a progress or polling convention, and
+guidance on what Alexa+ says to the user while a tool is still working.
+
+---
+
+## FRICTION-004 · Doc 404s on the first-hour critical path
+
+**Expected:** the links in the quickstart and API reference to resolve.
+
+**Happened:**
+- `/docs/alexaplus/add-ons/set-up-development-environment.html` returned 404, though the
   quickstart's first prerequisite points at "Set Up Your Development Environment."
-- `/en-US/docs/alexa/add-ons/alexa-ai-cli-reference.html` — 404, linked from the
-  Add-on API reference as the source for installation details.
+- `/en-US/docs/alexa/add-ons/alexa-ai-cli-reference.html` returned 404, linked from the Add-on
+  API reference as the source for installation details (see FRICTION-001).
 
-Both 404s sit directly on the critical path of a developer's first hour.
+**Impact:** both sit directly on a developer's first hour. The second removes the only
+documented route to installing the CLI.
+
+**Suggested fix:** restore or redirect both pages, and link-check the add-on docs.
 
 ---
 
 ## FRICTION-005 · The MCP TypeScript SDK does not typecheck against its own interface
 
-`StreamableHTTPServerTransport` is not assignable to the `Transport` interface it
+**Expected:** `server.connect(new StreamableHTTPServerTransport(...))` to compile under strict
+settings.
+
+**Happened:** `StreamableHTTPServerTransport` is not assignable to the `Transport` interface it
 implements, under TypeScript's `exactOptionalPropertyTypes`:
 
 ```
@@ -80,131 +115,169 @@ parameter of type 'Transport' with 'exactOptionalPropertyTypes: true'.
 ```
 
 The class exposes `onclose` / `onerror` / `onmessage` as accessor pairs typed
-`(() => void) | undefined`, while `Transport` declares them as optional properties.
-Under this flag the two spellings are not the same type, so `server.connect(transport)`
-fails against the SDK's own transport. Same for `CallToolResult`: a handler returning a
-plain object needs an index signature the docs never mention.
+`(() => void) | undefined`, while `Transport` declares them as optional properties. Under this
+flag the two spellings are different types. The same flag affects `CallToolResult`: a handler
+returning a plain object needs an index signature the docs never mention.
 
-*Cost:* ~20 minutes, and a cast in production code
-([src/index.ts](src/index.ts)) rather than relaxing the flag for our own modules.
-*What would have helped:* declaring the optional members in `Transport` as
-`onclose?: (() => void) | undefined`, which is a one-line change per member and makes the
-interface exact-optional-safe without affecting anyone else.
-*Status:* upstream fix candidate — this is the intended **Open Source mini-challenge**
-contribution. Small, self-contained, and verifiable with a single `tsc` run.
+**Impact:** about 20 minutes, and a cast in production code ([src/index.ts](src/index.ts))
+rather than relaxing the flag for our own modules.
+
+**Suggested fix:** declare the optional members in `Transport` as
+`onclose?: (() => void) | undefined`, a one-line change per member that makes the interface
+exact-optional-safe without affecting anyone else. Upstream fix candidate for the **Open Source
+mini-challenge**: small, self-contained, verifiable with a single `tsc` run.
 
 ---
 
 ## FRICTION-006 · The Alexa+ docs name the wrong well-known endpoint
 
-The MCP QuickStart's OAuth requirements say:
+**Expected:** the OAuth requirements to name the correct metadata document.
 
-> Host Protected Resource Metadata at `/.well-known/oauth-authorization-server`
-
-These are two different documents from two different RFCs, and they are not interchangeable:
+**Happened:** the MCP QuickStart says "Host Protected Resource Metadata at
+`/.well-known/oauth-authorization-server`". These are two different documents from two RFCs:
 
 | Document | RFC | Well-known path | Who hosts it |
 |---|---|---|---|
 | Protected Resource Metadata | RFC 9728 | `/.well-known/oauth-protected-resource` | the **resource server** |
 | Authorization Server Metadata | RFC 8414 | `/.well-known/oauth-authorization-server` | the **authorization server** |
 
-A developer following the instruction literally would publish resource metadata at the
-authorization-server path, and a spec-compliant client looking for
-`/.well-known/oauth-protected-resource` would find nothing - which is also what the
-`WWW-Authenticate: ... resource_metadata=` header points at.
+Followed literally, a developer would publish resource metadata at the authorization-server
+path, and a spec-compliant client looking for `/.well-known/oauth-protected-resource` (which is
+also what the `WWW-Authenticate: ... resource_metadata=` header points at) would find nothing.
 
-*Cost:* ~20 minutes deciding whether Amazon meant something unusual or the doc was wrong.
-*Resolution:* served both documents at their correct RFC paths, which satisfies either reading.
-*What would have helped:* naming both documents and their correct paths, and saying whether
-Alexa+ expects the add-on to be its own authorization server or to delegate to one.
+**Impact:** about 20 minutes deciding whether Amazon meant something unusual or the doc was
+wrong. Resolution: Viva serves both documents at their correct RFC paths, which satisfies either
+reading.
+
+**Suggested fix:** name both documents and their correct paths, and say whether Alexa+ expects
+the add-on to be its own authorization server or to delegate to one.
 
 ---
 
 ## FRICTION-007 · Returning the wrong OAuth error silently breaks token refresh
 
-`OAuthServerProvider.verifyAccessToken` is typed `Promise<AuthInfo>` and its doc comment
-says only "Verifies an access token." Nothing states which error to throw on failure - but
-the choice decides the HTTP status a client sees:
+**Expected:** the SDK docs to say which error `verifyAccessToken` throws on failure.
 
-- `InvalidTokenError` -> **401** + `WWW-Authenticate` challenge (correct, per RFC 6750)
-- any other `OAuthError` -> **400** with no challenge
+**Happened:** `OAuthServerProvider.verifyAccessToken` is typed `Promise<AuthInfo>` and its doc
+comment says only "Verifies an access token." The error choice decides the HTTP status a client
+sees:
 
-I first threw `InvalidGrantError`, which is the right error at the *token* endpoint and the
-wrong one at a *resource* server. Everything still appeared to work - tokens were rejected -
-but a real client would never learn it should re-authenticate, so expiry would surface as an
-unexplained 400 instead of a refresh. Our own end-to-end test caught it; a unit test of the
-provider alone would not have.
+- `InvalidTokenError` gives **401** plus a `WWW-Authenticate` challenge (correct, per RFC 6750).
+- any other `OAuthError` gives **400** with no challenge.
 
-*Cost:* ~15 minutes, and it would have been a production bug that only appeared an hour
-after any successful login, when the first access token expired.
-*What would have helped:* one line on `verifyAccessToken` - "throw `InvalidTokenError` if the
-token is invalid or expired" - or narrowing the throws in the interface's documentation.
-*Status:* second upstream contribution candidate, alongside FRICTION-005.
+I first threw `InvalidGrantError`, which is right at the *token* endpoint and wrong at a
+*resource* server. Everything still appeared to work (tokens were rejected), but a real client
+would never learn it should re-authenticate, so expiry would surface as an unexplained 400
+instead of a refresh. Our own end-to-end test caught it; a unit test of the provider alone would
+not have.
+
+**Impact:** about 15 minutes, and a production bug that would only appear an hour after any
+successful login, when the first access token expired.
+
+**Suggested fix:** one line on `verifyAccessToken` ("throw `InvalidTokenError` if the token is
+invalid or expired"), or narrowing the throws in the interface's documentation. Second upstream
+contribution candidate, alongside FRICTION-005.
 
 ---
 
 ## FRICTION-008 · "Non-blocking, replaces on the next turn" does not say what it replaces
 
-F-5 reads cleanly until you try to write the turn-taking test: a probe fired by answer N can
-only be asked in reply to answer N+1 (the reply to N already returned a seed), so the probe is
-always about the previous answer. Nothing in the spec says whether that is intended, whether a
-probe may extend the exam past its seeds, or how a caller can tell a generated question from a
-seed. Chose the literal reading and logged GAP-014 rather than deciding.
+*(Friction in this project's own spec rather than Amazon's, kept because the same ambiguity
+will hit anyone writing a turn-based add-on.)*
 
-*Cost:* ~15 minutes of design thought; no code churn.
-*What would have helped:* one sentence on staleness, and on whether seeds or probes own the
+**Expected:** F-5 to determine what the probe is about.
+
+**Happened:** a probe fired by answer N can only be asked in reply to answer N+1 (the reply to N
+already returned a seed), so it is always about the previous answer. The spec does not say
+whether that is intended, whether a probe may extend the exam past its seeds, or how a caller
+can tell a generated question from a seed. I implemented the literal reading and logged GAP-014
+rather than deciding.
+
+**Impact:** about 15 minutes of design thought; no code churn.
+
+**Suggested fix:** one sentence in the spec on staleness, and on whether seeds or probes own the
 exam length.
+
+---
 
 ## FRICTION-009 · `output_config.effort` on a plain `messages.create` is unverified
 
-The rubric adapter uses `effort` with `messages.parse`; the probe adapter uses it with plain
-`messages.create` at `"low"`, assuming the Mantle surface accepts it there too. No credentials
-were available to try it, so this is the first line to check on a live run.
+*(A recorded unknown, not an observed failure.)*
 
+**Expected:** `effort` to be accepted on the Bedrock Mantle surface for plain
+`messages.create`, as it is for `messages.parse`.
 
+**Happened:** the rubric adapter uses `effort` with `messages.parse`; the probe adapter uses it
+with `messages.create` at `"low"`, assuming the surface accepts it. No credentials were
+available to try, so this has never run against the live service.
+
+**Impact:** a possible silent failure of follow-up probes in a live run. Probes fail silent by
+design (seeds are used), so it would not be visible without checking the logs. This is the
+first line to check on a live run.
+
+**Suggested fix:** a documented table of which request parameters the Mantle client accepts on
+each `messages.*` method.
 
 ---
 
 ## FRICTION-010 · No Alexa+ client to demo against, so the demo needs its own
 
-With the add-on toolchain closed to participants (GAP-001, GAP-006) there is nothing that
-plays Alexa+ for a demo video. I built a browser client (`/demo`) that performs the OAuth 2.1
-+ PKCE flow and calls the seven tools over Streamable HTTP, speaking `content` with
-`speechSynthesis` and listening with `SpeechRecognition`. It is also the only way I have to
-measure the 500ms round trip from the caller's side.
+**Expected:** a way to run an add-on against Alexa+ during the hackathon: a simulator,
+developer-stage access, or a documented local test harness.
 
-*Cost:* roughly a day that would have gone into the actual product. *Observed:* tool round
-trips of 3-16 ms on loopback, so the budget is dominated by whatever sits between Alexa+ and
-the server, not by the tools.
-*What would have helped:* a documented local test harness or simulator for Alexa+ MCP add-ons.
+**Happened:** the add-on toolchain is closed to participants (GAP-001, GAP-006), so nothing
+plays Alexa+ for a demo video. I built a browser client (`/demo`) that performs the OAuth 2.1 +
+PKCE flow and calls the seven tools over Streamable HTTP, speaking `content` with
+`speechSynthesis` and listening with `SpeechRecognition`. It is also the only way I have to
+measure round trips from the caller's side.
+
+**Impact:** roughly a day that would have gone into the actual product. Observed tool round
+trips of 3-16 ms on loopback in the browser, so the budget is dominated by whatever sits
+between Alexa+ and the server, not by the tools. Everything verified in this repo is verified
+against that stand-in, not against Alexa+.
+
+**Suggested fix:** a documented local test harness or simulator for Alexa+ MCP add-ons, and
+participant access to the development stage.
 
 ---
 
 ## FRICTION-011 · The SDK's Streamable HTTP transport answers in SSE, and only initialises once
 
-Two surprises when writing an MCP *client* against our own server:
+**Expected:** a POST to `/mcp` to return JSON for a one-shot call, and a second client to be
+able to connect.
 
+**Happened:** two surprises when writing an MCP *client* against our own server.
 1. POST responses come back as `text/event-stream` even for one-shot calls, so a client that
    assumes `application/json` fails on the first call. The spec allows either; a client must
    parse both.
-2. A stateful transport accepts a single `initialize` for its whole life (see GAP-015). The
-   error is accurate but surfaces only on the second client, which is the one you meet after
-   a page reload.
+2. A stateful transport accepts a single `initialize` for its whole life (GAP-015). The error
+   (`400 Server already initialized`) is accurate but surfaces only on the second client, which
+   is the one you meet after a page reload.
 
-*Cost:* ~30 minutes, mostly the second. *What would have helped:* a note in the SDK server
-docs that one transport instance serves one session, with the per-session pattern shown.
+**Impact:** about 30 minutes, mostly the second. It also meant the first deployment would have
+worked for one conversation and failed the next (fixed by per-session transports).
+
+**Suggested fix:** a note in the SDK server docs that one transport instance serves one session,
+with the per-session pattern shown.
+
+---
 
 ## FRICTION-012 · `registerAppResource` does not type-check against the SDK it is built for
 
-`@modelcontextprotocol/ext-apps` 2.0.0's `registerAppResource` takes `McpUiAppResourceConfig`,
-which extends the SDK's `ResourceMetadata`. With `@modelcontextprotocol/sdk` 1.30.0 installed,
-passing the SDK's own documented `title` or `description` is rejected with "does not exist in
-type" - two errors in a row, each naming a field `ResourceMetadata` plainly has. I stopped
-fighting it and called `server.registerResource` directly with the exported
-`RESOURCE_MIME_TYPE`, which is all the helper adds. Also: the package ships no way to get a
-self-contained single-file view without a bundler (its `App` class needs bundling), so the
-views speak the small host protocol (`ui/initialize`, `ui/notifications/tool-result`) by hand
-in about 30 lines. The protocol types made that easy; a "no-bundler" note in the README would
-have saved the detour.
+**Expected:** `@modelcontextprotocol/ext-apps` 2.0.0's `registerAppResource` to accept the SDK's
+own documented resource metadata.
 
-*Cost:* ~20 minutes. *Status:* upstream issue candidate (the type mismatch).
+**Happened:** it takes `McpUiAppResourceConfig`, which extends the SDK's `ResourceMetadata`.
+With `@modelcontextprotocol/sdk` 1.30.0 installed, passing the SDK's own documented `title` or
+`description` is rejected with "does not exist in type" (two errors, each naming a field
+`ResourceMetadata` plainly has). I called `server.registerResource` directly with the exported
+`RESOURCE_MIME_TYPE`, which is all the helper adds. Separately, the package ships no way to get a
+self-contained single-file view without a bundler (its `App` class needs bundling), so the views
+speak the small host protocol (`ui/initialize`, `ui/notifications/tool-result`) by hand in about
+30 lines.
+
+**Impact:** about 20 minutes. The protocol types made the hand-rolled path easy; a no-bundler
+note would have saved the detour.
+
+**Suggested fix:** align the helper's types with the SDK's `ResourceMetadata` (upstream issue
+candidate), and add a "no-bundler" section to the README showing the raw host handshake.

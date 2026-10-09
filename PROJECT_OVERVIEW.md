@@ -58,18 +58,32 @@ Four equally weighted criteria. What we lead with for each:
 - **Open Source mini-challenge** — MIT repo plus one genuine upstream contribution.
 - **Friction log** — up to 10% judging bonus; written continuously, not retrofitted.
 
-## Six-week plan (today: 2026-09-10 → deadline 2026-10-23 12:00 PT)
+## Six-week plan (started 2026-09-10 → deadline 2026-10-23 12:00 PT)
 
-| Week | Dates | Goal | Done means |
-|---|---|---|---|
-| 1 | Sep 10–16 | **Retire the platform risks** | `alexa-ai` obtained from a verified Amazon source; a hello-world MCP server reachable by Alexa+; add-on registration confirmed available |
-| 2 | Sep 17–23 | Exam engine | State machine + corpus + tools pass local MCP inspector tests |
-| 3 | Sep 24–30 | Intelligence | Bedrock follow-ups + rubric scoring, validated against sample answers |
-| 4 | Oct 1–7 | Make it real | OAuth 2.1 + PKCE, public HTTPS, <500ms, end-to-end in the web simulator |
-| 5 | Oct 8–14 | Surface | MCP Apps UI, progress tracking, polish |
-| 6 | Oct 15–22 | Ship | Demo video, submission copy, friction log, OSS contribution, buffer |
+| Week | Dates | Goal | Done means | Status (2026-10-08) |
+|---|---|---|---|---|
+| 1 | Sep 10–16 | **Retire the platform risks** | `alexa-ai` obtained from a verified Amazon source; a hello-world MCP server reachable by Alexa+; add-on registration confirmed available | **Not achieved.** The CLI source is still unverified (GAP-001) and the add-on toolchain is closed to participants (GAP-006). Fallback taken: a browser demo client plays Alexa+ (`src/ui`) |
+| 2 | Sep 17–23 | Exam engine | State machine + corpus + tools pass local MCP inspector tests | Shipped (F-1 to F-4). Tested with vitest and the SDK client, not the MCP inspector |
+| 3 | Sep 24–30 | Intelligence | Bedrock follow-ups + rubric scoring, validated against sample answers | Built (F-5, F-6) and tested with fakes. **Not validated against real Bedrock** (no credentials) |
+| 4 | Oct 1–7 | Make it real | OAuth 2.1 + PKCE, public HTTPS, <500ms, end-to-end in the web simulator | OAuth 2.1 + PKCE and latency evidence shipped (F-9, `docs/latency.md`). **Public HTTPS deployment: not done.** Web simulator: replaced by the demo client |
+| 5 | Oct 8–14 | Surface | MCP Apps UI, progress tracking, polish | MCP Apps views (F-8) and file-backed progress (F-7) shipped; host rendering unverified (GAP-017). Docs refresh in this pass |
+| 6 | Oct 15–22 | Ship | Demo video, submission copy, friction log, OSS contribution, buffer | Pending. See [docs/SUBMISSION_NOTES.md](docs/SUBMISSION_NOTES.md). Friction log is written; no upstream contribution is recorded in this repo yet (candidates: FRICTION-005, 007, 012) |
 
-**Submit by Oct 21**, two days early. Week 1 is deliberately risk-retirement: every
-unknown that could invalidate the approach is front-loaded, because the fallback
-(a simulated Alexa+ experience in a web app, which the rules permit) needs to be chosen
-by end of Week 2 at the latest — not discovered in Week 5.
+**Submit by Oct 21**, two days early. Week 1 was deliberately risk-retirement, and it did its
+job: the unknowns were not resolved, so the simulated-Alexa+ fallback (which the rules permit)
+was taken early rather than discovered in Week 5.
+
+## Status against the scope above
+
+| Scope item | State |
+|---|---|
+| IELTS Speaking Parts 1-3, en-US | Shipped. 49 original items; a smaller fr-FR TCF set also exists |
+| Server-side state machine with real timing | Shipped (F-3) |
+| Follow-ups grounded in the transcript | Built; Bedrock path untested live; seeds always work (F-5, GAP-014) |
+| Rubric scoring on Bedrock, three criteria | Built; untested live (F-6) |
+| MCP Apps UI | Built; stand-in host only (F-8, GAP-017) |
+| Progress tracking | Shipped, memory or JSON file (F-7) |
+| OAuth 2.1 + PKCE | Shipped (F-9); passcode user auth is demo-grade (GAP-011), no revocation (GAP-010) |
+| Public HTTPS deployment | **Deferred** (owner task) |
+| Sub-500ms tool latency | Server side shown by `npm run bench`; end-to-end Alexa+ latency unmeasured |
+| Real Alexa+ host | **Not available** to participants |

@@ -3,6 +3,28 @@
 Severity: **S1** blocks the submission · **S2** degrades a judging criterion · **S3** polish.
 Status: `OPEN` · `MITIGATED` · `CLOSED`.
 
+## Index (as of 2026-10-08)
+
+| ID | Sev | Status | Title | Friction log |
+|---|---|---|---|---|
+| GAP-001 | S1 | OPEN | `alexa-ai` CLI provenance is unverified | FRICTION-001, 004, 010 |
+| GAP-002 | S1 | MITIGATED | Exam corpus cannot be third-party content | |
+| GAP-003 | S2 | OPEN | Alexa+ is US / en-US; French demo path is unsafe | |
+| GAP-004 | S2 | OPEN | No audio access means no pronunciation scoring | FRICTION-002 |
+| GAP-005 | S2 | MITIGATED | <500ms budget vs. an LLM grading call | FRICTION-003 |
+| GAP-006 | S2 | OPEN | Add-on certification may not complete before the deadline | FRICTION-010 |
+| GAP-007 | S3 | CLOSED | Session identity across turns | |
+| GAP-008 | S2 | CLOSED | Nothing happens when the speaking clock runs out | |
+| GAP-009 | S3 | CLOSED | `provenance` is in the schema but not the spec | |
+| GAP-010 | S3 | OPEN | Token revocation is not implemented | |
+| GAP-011 | S2 | OPEN | User authentication is demo-grade | |
+| GAP-012 | S2 | CLOSED | F-6 specified a `temperature` the model rejects | |
+| GAP-013 | S3 | CLOSED | F-6's named Bedrock SDK is the legacy path | |
+| GAP-014 | S3 | OPEN | F-5's probe is one turn stale when asked | FRICTION-008 |
+| GAP-015 | S2 | CLOSED | The server accepted one MCP session per process | FRICTION-011 |
+| GAP-016 | S3 | CLOSED | Pressing Enter on the consent screen denied the request | |
+| GAP-017 | S3 | OPEN | F-8 level indicator needs the microphone; hosts unverified | FRICTION-012 |
+
 ---
 
 ## GAP-001 · S1 · OPEN · `alexa-ai` CLI provenance is unverified
@@ -29,7 +51,7 @@ hours on day 1. → also **FRICTION-001**, and a strong candidate for a feature 
 
 ---
 
-## GAP-002 · S1 · OPEN · Exam corpus cannot be third-party content
+## GAP-002 · S1 · MITIGATED · Exam corpus cannot be third-party content
 
 The hackathon requires a **public GitHub repo with an open-source license**. The 80 TCF
 mock tests in `tcf_deduplicator` are almost certainly licensed or copyrighted material and
@@ -38,6 +60,12 @@ mock tests in `tcf_deduplicator` are almost certainly licensed or copyrighted ma
 *Action:* author an original corpus in the same *format* (Part 1 topic sets, Part 2 cue
 cards, Part 3 discussion ladders). Format and rubric criteria are not copyrightable;
 specific items are. Keep `corpus/` provably original and note its provenance in the README.
+
+*Status 2026-10-08:* mitigated, not closed. Every corpus file must carry a `provenance`
+string or the loader refuses to start (GAP-009), and both shipped files state that the items
+were newly written for this project with AI assistance and not copied or adapted from
+published exam material. That is the author's attestation; the repo cannot prove originality
+beyond it, so the owner should still skim `corpus/` before submission.
 
 ---
 
@@ -74,6 +102,10 @@ finish in that window.
 work and returns immediately; results are collected on a follow-up turn while Alexa+ is
 naturally saying "let me pull your results together." Design for this from day 1 — it is
 not a late optimization.
+
+*Latest evidence:* HTTP-level numbers over real OAuth and Streamable HTTP are in
+[docs/latency.md](docs/latency.md) (client p95 under 1 ms on loopback, with fakes for the
+model). The in-process figures below predate it.
 
 *Measured 2026-09-11*, once F-2/F-3 landed — the turn-taking path is effectively free:
 
@@ -268,6 +300,8 @@ capped (`VIVA_MCP_SESSION_MAX`, default 100, least-recently-used evicted). Tests
 Not done: a connection is not bound to the subject that opened it (a different valid token holding
 a leaked session id could use it). Ids are random UUIDs and the bearer check still applies.
 
+Related friction: FRICTION-011.
+
 *Original report follows.*
 
 
@@ -282,7 +316,7 @@ device, so the first conversation after deployment would work and the next would
 
 *Mitigation in the demo client:* it remembers its `Mcp-Session-Id` in `sessionStorage`, so a
 reload in the same tab reuses it, and it reports the 400 plainly when it cannot.
-*Decision needed (not taken here):* per-session transports (a transport and `McpServer`
+*Decision needed (not taken here; later taken, see the resolution above):* per-session transports (a transport and `McpServer`
 per `initialize`, sharing the session/progress stores), or stateless mode. That changes
 `src/app.ts` and the F-1 spec, so it is registered rather than decided.
 
