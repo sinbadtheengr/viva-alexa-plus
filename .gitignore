@@ -2,10 +2,13 @@ node_modules/
 dist/
 .env
 .env.local
+.env.*
+!.env.example
 *.log
 .DS_Store
 coverage/
-data/progress.json
+data/
+*.tmp
 bench-output/
 
 # Claude Code agent worktrees
