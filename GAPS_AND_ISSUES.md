@@ -288,16 +288,20 @@ per `initialize`, sharing the session/progress stores), or stateless mode. That 
 
 ---
 
-## GAP-016 · S3 · OPEN · Pressing Enter on the consent screen denies the request
+## GAP-016 · S3 · CLOSED · Pressing Enter on the consent screen denied the request
 
-`src/auth/consent.ts` renders Cancel before Authorize inside one form, so the form's default
-button is Cancel. Typing the passcode and pressing Enter - the natural thing to do - submits
-`action=deny` and redirects to the client with `error=access_denied`. Verified live in the
-demo client, which correctly reported "Sign-in was cancelled."
+`src/auth/consent.ts` rendered Cancel before Authorize inside one form, so the form's default
+button was Cancel. Typing the passcode and pressing Enter submitted `action=deny` and
+redirected to the client with `error=access_denied`.
 
-*Fix (not made here, outside A2's scope):* put the primary Authorize button first in DOM order
-(style it last) or add a hidden default submit with `value="approve"`. Needs a test in
-`tests/auth.test.ts`.
+*Closed:* Authorize is now first in DOM order, so it is the form's default submit button and
+Enter authorizes. Cancel follows it. The buttons are stacked full width (Authorize on top)
+rather than reordered with CSS, so tab order and visual order agree; they are 3.5rem tall
+with 1.25rem type, a darker primary blue and a visible 4px focus outline, and nothing depends
+on hover. Server behaviour is unchanged: only `action=deny` denies, the passcode is still
+checked on every other submission, and the deny path still redirects to the validated
+redirect URI with `access_denied`. Tests in `tests/consent.test.ts`. No product decision was
+needed. Not checked: a real Echo Show or Alexa+ host.
 
 
 ---
