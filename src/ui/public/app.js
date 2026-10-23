@@ -217,6 +217,8 @@ function renderTranscript() {
 }
 
 function showTypedFallback(why) {
+  const captured = transcriptSoFar();
+  if (captured && !$("typed").value) $("typed").value = captured;
   show("typedArea");
   $("btnListen").hidden = true;
   if (why) banner(why);
@@ -232,6 +234,7 @@ function startListening() {
   rec.continuous = true;
   rec.interimResults = true;
   rec.onresult = (e) => {
+    if (listener.rec !== rec) return;
     let fin = "", interim = "";
     for (let i = 0; i < e.results.length; i++) {
       const r = e.results[i];
@@ -242,24 +245,40 @@ function startListening() {
     renderTranscript();
   };
   rec.onerror = (e) => {
-    if (e.error === "not-allowed" || e.error === "service-not-allowed" || e.error === "audio-capture") {
-      listener.active = false;
-      showTypedFallback("Microphone unavailable, so type your answer instead.");
+    if (listener.rec !== rec || !listener.active || e.error === "aborted") return;
+    if (e.error === "no-speech") {
+      banner("No speech detected. Check your microphone input and speak again.");
+      return;
     }
+    listener.active = false;
+    $("btnListen").textContent = "Start listening";
+    showTypedFallback(`Speech recognition unavailable (${e.error}). Try this page in Chrome or Edge with microphone access, or type your answer below.`);
   };
   rec.onend = () => {
-    // Continuous recognition stops itself after silence; fold the run in and resume.
+    if (listener.rec !== rec) return;
+    // Preserve completed speech, then require a user gesture to resume.
     listener.committed = `${listener.committed} ${listener.runFinal}`.trim();
     listener.runFinal = "";
     listener.runInterim = "";
-    if (listener.active && listener.rec === rec) { try { rec.start(); } catch { /* already started */ } }
+    if (listener.active) {
+      listener.active = false;
+      $("btnListen").textContent = "Start listening";
+      banner("Listening stopped. Click Start listening to continue your answer.");
+    }
   };
-  try { rec.start(); } catch { /* ignore double start */ }
+  try { rec.start(); } catch (error) {
+    listener.active = false;
+    showTypedFallback(`Speech recognition could not start: ${error.message}. Type your answer below.`);
+    return;
+  }
   $("btnListen").textContent = "Listening... (tap to pause)";
 }
 
 function stopListening() {
   listener.active = false;
+  listener.committed = transcriptSoFar();
+  listener.runFinal = "";
+  listener.runInterim = "";
   const rec = listener.rec;
   listener.rec = null;
   if (rec) { try { rec.stop(); } catch { /* ignore */ } }
@@ -357,7 +376,11 @@ function beginAnswering() {
   show("answerArea");
   show("elapsedBox");
   resetTranscript();
-  startListening();
+  // Start from a fresh user gesture on every turn. Browsers may reject an
+  // automatic restart after asynchronous tool calls and speech playback.
+  show("btnListen", Boolean(Recognition));
+  show("typedArea", !Recognition);
+  $("btnListen").textContent = "Start listening";
 }
 
 async function submit() {
