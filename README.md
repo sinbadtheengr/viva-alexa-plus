@@ -38,7 +38,7 @@ Requires Node 24+ (the version it is built and tested on).
 
 ```bash
 npm install
-npm run build && npm test          # 273 tests
+npm run build && npm test          # 276 tests
 ```
 
 Run the server with the browser demo client (the Alexa+ stand-in, see below):
@@ -116,7 +116,7 @@ from CLAUDE.md F-4.
 
 ## What is verified, and what is not
 
-**Verified by code and tests** (`npm test`, 273 tests across 14 files):
+**Verified by code and tests** (`npm test`, 276 tests across 15 files):
 
 - Session state machine, overrun handling, corpus validation (including mandatory `provenance`, at least 20 characters after trimming).
 - Tool behaviour and error mapping; seed-first follow-ups; probes never block a turn.
@@ -131,6 +131,13 @@ from CLAUDE.md F-4.
   and refusal to overwrite a corrupt file.
 - Multiple concurrent MCP sessions (GAP-015); MCP Apps resources and tool metadata.
 - Server-side latency against every F-4 budget (`npm run bench`).
+
+**Verified in the recorded desktop Chrome demo:** microphone transcription works across the
+initial answer and follow-up questions. Click **Start listening** for each answer after the
+examiner finishes speaking. Recognition errors expose a typed fallback, and lifecycle regression
+tests cover stale callbacks, captured-text preservation and stopped recognition.
+The [public demo video](https://www.youtube.com/watch?v=S-tLaRN6JSY) shows the browser playing
+the Alexa+ role, seed follow-ups and the honest unavailable-scoring result with no live grader.
 
 **Not verified:**
 
@@ -170,7 +177,7 @@ compliance, **not** end-to-end Alexa+ latency. See the caveats in the report.
 
 ```bash
 npm run build          # tsc
-npm test               # vitest, 12 files
+npm test               # vitest, 15 files
 npm run typecheck
 npm run bench          # writes bench-output/latency.md (untracked); BENCH_OUT=- prints only
 npm run bench:report   # 200 iterations, refreshes the committed docs/latency.md
